@@ -7,7 +7,7 @@ var SPEED = 7;
 var temporaryGraphics;
 function spawnBullet(bullet) {
     bullets.push(bullet);
-    app.stage.addChild(bullet.sprite);
+    stage.addChild(bullet.sprite);
 }
 var BULLET_SPEED = 10;
 var gameEnded;
@@ -29,10 +29,10 @@ var Player = (function (_super) {
         var texture = PIXI.Texture.fromImage('img/ship.png');
         var playerSprite = new PIXI.Sprite(texture);
         playerSprite.anchor.x = 0.5;
-        app.stage.addChild(playerSprite);
+        stage.addChild(playerSprite);
         playerSprite.anchor.y = 0.65;
-        playerSprite.x = app.view.width / 2;
-        playerSprite.y = app.view.height * 3 / 4;
+        playerSprite.x = WIDTH / 2;
+        playerSprite.y = HEIGHT * 3 / 4;
         playerSprite.width = 64;
         playerSprite.height = 64;
         _this.sprite = playerSprite;
@@ -66,10 +66,10 @@ var Player = (function (_super) {
             this.sprite.x = 0;
         if (this.sprite.y < 0)
             this.sprite.y = 0;
-        if (this.sprite.x > app.view.width)
-            this.sprite.x = app.view.width;
-        if (this.sprite.y > app.view.height)
-            this.sprite.y = app.view.height;
+        if (this.sprite.x > WIDTH)
+            this.sprite.x = WIDTH;
+        if (this.sprite.y > HEIGHT)
+            this.sprite.y = HEIGHT;
     };
     Player.prototype.update = function (delta) {
         _super.prototype.update.call(this, delta);

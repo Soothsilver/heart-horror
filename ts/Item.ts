@@ -16,7 +16,7 @@
     }
 
     public isOutOfGame(): boolean {
-        return this.sprite.x < -200 || this.sprite.y < -200 || this.sprite.x > app.view.width + 200 || this.sprite.y > app.view.height+200 || this.gone;
+        return this.sprite.x < -200 || this.sprite.y < -200 || this.sprite.x > WIDTH + 200 || this.sprite.y > HEIGHT+200 || this.gone;
     }
 
     protected constructor(sprite: PIXI.Sprite, collider: Collider, pattern : Pattern) {

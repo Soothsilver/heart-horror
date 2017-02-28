@@ -1,12 +1,20 @@
-﻿var app = new PIXI.Application(1280, 720, { backgroundColor: 0x1099bb });
-document.getElementById("viewport").appendChild(app.view);
+﻿var WIDTH = 1280;
+var HEIGHT = 720;
+var renderer = PIXI.autoDetectRenderer(WIDTH, HEIGHT, { backgroundColor: 0x1099bb });
+var stage = new PIXI.Container();
+var ticker = new PIXI.ticker.Ticker();
+ticker.add(() => renderer.render(stage));
+ticker.start();
+//renderer.resize(20, 20);
 
+renderer.render(stage);
+document.getElementById("viewport").appendChild(renderer.view);
 // Player and boss
 var enemies: Enemy[] = [];
 var bullets: Bullet[] = [];
 var player: Player;
 
-
+ 
 
 // Interface
 var bossBar: BossBar;
@@ -24,18 +32,18 @@ function createBulletSprite(x: number, y: number, img: string): PIXI.Sprite {
     sprite.anchor.y = 0.5; 
     return sprite;
 }
-app.ticker.speed = 1;
+ticker.speed = 0.5;
 buttons.f2.release = function () {
     showColliders = !showColliders;
-    app.stage.removeChild(temporaryGraphics);
+    stage.removeChild(temporaryGraphics);
 }
 buttons.r.release = function () { 
     reset();
 }
 
 var boss = enemies[0];
-app.ticker.add(function (delta) {
-    basicText.text = "FPS: " + app.ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + boss.pattern.explain();
+ticker.add(function (delta) {
+    basicText.text = "FPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + boss.pattern.explain();
     if (buttons.left.isDown) {
         player.sprite.x -= SPEED * delta;
     }
@@ -55,7 +63,7 @@ app.ticker.add(function (delta) {
         }
     }
     if (showColliders) {
-        app.stage.removeChild(temporaryGraphics);
+        stage.removeChild(temporaryGraphics);
         temporaryGraphics = new PIXI.Graphics();
     }
     for (var i = enemies.length - 1; i >= 0; i--) {
@@ -65,7 +73,7 @@ app.ticker.add(function (delta) {
             enemy.collider.draw(temporaryGraphics, 0xFF0000);
         }
         if (enemy.isOutOfGame()) {
-            app.stage.removeChild(enemy.sprite);
+            stage.removeChild(enemy.sprite);
             enemies.splice(i, 1);
         }
     }
@@ -76,13 +84,13 @@ app.ticker.add(function (delta) {
             bullet.collider.draw(temporaryGraphics, bullet.friendly ? Colors.LightGreen : 0xFF0000);
         }
         if (bullet.isOutOfGame()) {
-            app.stage.removeChild(bullet.sprite);
+            stage.removeChild(bullet.sprite);
             bullets.splice(i, 1);
         }
     }
     player.update(delta);
     if (player.isOutOfGame()) {
-        app.stage.removeChild(player.sprite);
+        stage.removeChild(player.sprite);
     }
     if (showColliders) {
         player.collider.draw(temporaryGraphics, Colors.LuminousGreen);
@@ -92,6 +100,6 @@ app.ticker.add(function (delta) {
     }
     playerBar.update(player.hp);
     if (showColliders) {
-        app.stage.addChild(temporaryGraphics);
+        stage.addChild(temporaryGraphics);
     } 
 });

@@ -1,5 +1,5 @@
 function reset() {
-    app.stage.removeChildren();
+    stage.removeChildren();
     bullets = [];
     enemies = [];
     spawnBoss();
@@ -11,7 +11,7 @@ function reset() {
     basicText = new PIXI.Text("FPS: ?");
     basicText.x = 10;
     basicText.y = 10;
-    app.stage.addChild(basicText);
+    stage.addChild(basicText);
 }
 function spawnBoss() {
     var frammes = [];
@@ -19,15 +19,15 @@ function spawnBoss() {
         frammes.push(PIXI.Texture.fromImage('img/eye/eye' + i + '.png'));
     }
     var enemySprite = new PIXI.extras.AnimatedSprite(frammes);
-    enemySprite.x = app.view.width / 2;
-    enemySprite.y = app.view.height * 1 / 5;
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
     enemySprite.anchor.x = 0.5;
     enemySprite.anchor.y = 0.5;
     enemySprite.animationSpeed = 0.2;
     enemySprite.play();
     var boss = new Enemy(enemySprite, new CircleCollider(143), createEyeBoss());
     boss.hp = 800;
-    app.stage.addChild(enemySprite);
+    stage.addChild(enemySprite);
     enemies = [boss];
 }
 //# sourceMappingURL=Level.js.map

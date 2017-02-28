@@ -8,7 +8,7 @@
     public color: number;
     public maxHP: number;
     public y: number;
-    private x: number = app.view.width - 310;
+    private x: number = WIDTH - 310;
     private height: number = 30;
     private width: number = 300;
 
@@ -31,28 +31,28 @@
         this.text.y = this.y + 5;
         this.text.style.fontSize = 18;
 
-        app.stage.addChild(this.text);
-        app.stage.addChild(this.outline);
+        stage.addChild(this.text);
+        stage.addChild(this.outline);
     }
 
     public remove() {
-        app.stage.removeChild(this.text);
-        app.stage.removeChild(this.outline);
-        app.stage.removeChild(this.graphics);
+        stage.removeChild(this.text);
+        stage.removeChild(this.outline);
+        stage.removeChild(this.graphics);
         this.ended = true;
     }
     public update(bossHp: number) {
         if (this.ended) return;
         this.text.text = this.name + ": " + bossHp;
-        app.stage.removeChild(this.text);
-        app.stage.removeChild(this.graphics);
+        stage.removeChild(this.text);
+        stage.removeChild(this.graphics);
         var innere = new PIXI.Graphics();
         innere.lineStyle(0);
         innere.beginFill(this.color);
         innere.drawRoundedRect(this.x + 4, this.y + 4, (this.width - 8) * bossHp / this.maxHP, this.height - 8, 8);
         innere.endFill();
         this.graphics = innere;
-        app.stage.addChild(this.graphics);
-        app.stage.addChild(this.text);
+        stage.addChild(this.graphics);
+        stage.addChild(this.text);
     }
 }
