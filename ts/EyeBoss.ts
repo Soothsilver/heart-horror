@@ -1,7 +1,6 @@
 ﻿function createEyeBoss() : Pattern {
     var bossMovement =
         new RepeatPattern(() => [
-
             new RepeatPattern(() =>
                 [
                     new FixedDuration(120).While(shooting).While(rotating),

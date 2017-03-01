@@ -51,7 +51,7 @@ class PeriodicPattern extends Pattern {
         }
     }
     public explain(): string {
-        return "periodic";
+        return "periodic-fire";
     }
 }
 class RotationPattern extends Pattern {
@@ -144,7 +144,6 @@ class RandomPattern extends SequencePattern {
     constructor(patterns: Pattern[]) {
         super([RandomPattern.getRandomPattern(patterns)]);
     }
-
 }
 class CombinationPattern extends Pattern {
     private patterns: Pattern[];
@@ -165,7 +164,7 @@ class CombinationPattern extends Pattern {
         for (var p of this.patterns) {
             x += p.explain() + " ";
         }
-        return "combine( " + x + ")";
+        return "[ " + x + "]";
     }
 }
 class SimpleMove extends CombinationPattern {
@@ -192,7 +191,7 @@ class FixedDuration extends Pattern {
         }
     }
     public explain(): string {
-        return "wait";
+        return "fixed-time";
     }
 }
 class UniformMovementPattern extends Pattern {

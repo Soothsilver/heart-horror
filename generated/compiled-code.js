@@ -3,6 +3,166 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+function keyboard(keyCode) {
+    var key = {};
+    key.code = keyCode;
+    key.isDown = false;
+    key.isUp = true;
+    key.press = undefined;
+    key.release = undefined;
+    key.downHandler = function (event) {
+        if (buttons.handledKeys.indexOf(event.keyCode) == -1)
+            return;
+        if (event.keyCode === key.code) {
+            if (key.isUp && key.press)
+                key.press();
+            key.isDown = true;
+            key.isUp = false;
+        }
+        if (event.keyCode != 80 && event.keyCode != 19) {
+            unpause();
+        }
+        event.preventDefault();
+    };
+    key.upHandler = function (event) {
+        if (buttons.handledKeys.indexOf(event.keyCode) == -1)
+            return;
+        if (event.keyCode === key.code) {
+            if (key.isDown && key.release)
+                key.release();
+            key.isDown = false;
+            key.isUp = true;
+        }
+        event.preventDefault();
+    };
+    window.addEventListener("keydown", key.downHandler.bind(key), false);
+    window.addEventListener("keyup", key.upHandler.bind(key), false);
+    return key;
+}
+var buttons = {
+    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27],
+    left: keyboard(37),
+    right: keyboard(39),
+    down: keyboard(40),
+    up: keyboard(38),
+    control: keyboard(17),
+    a: keyboard(65),
+    f2: keyboard(113),
+    space: keyboard(32),
+    r: keyboard(82),
+    z: keyboard(90),
+    shift: keyboard(16),
+    p: keyboard(80),
+    pause: keyboard(19),
+    esc: keyboard(27)
+};
+var WIDTH = 1280;
+var HEIGHT = 720;
+var renderer = PIXI.autoDetectRenderer(WIDTH, HEIGHT, { backgroundColor: 0x1099bb });
+var stage = new PIXI.Container();
+var ticker = new PIXI.ticker.Ticker();
+ticker.add(function () { return renderer.render(stage); });
+ticker.start();
+renderer.render(stage);
+$(document).ready(function () {
+    document.getElementById("viewport").appendChild(renderer.view);
+    reset();
+});
+var enemies = [];
+var bullets = [];
+var player;
+var bossBar;
+var playerBar;
+var basicText;
+var showColliders = false;
+function createBulletSprite(x, y, img) {
+    var sprite = PIXI.Sprite.fromImage("img/" + img);
+    sprite.x = x;
+    sprite.y = y;
+    sprite.anchor.x = 0.5;
+    sprite.anchor.y = 0.5;
+    return sprite;
+}
+ticker.speed = 1;
+buttons.f2.release = function () {
+    showColliders = !showColliders;
+    stage.removeChild(temporaryGraphics);
+};
+buttons.r.release = function () {
+    reset();
+};
+buttons.shift.press = function () {
+    if (difficulty <= DIFFICULTY_EASY) {
+        ticker.speed = 0.5;
+    }
+    else {
+        ticker.speed = 1;
+    }
+};
+buttons.shift.release = function () {
+    ticker.speed = 1;
+};
+ticker.add(function (delta) {
+    basicText.text = "FPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + enemies[0].pattern.explain();
+    if (buttons.left.isDown) {
+        player.sprite.x -= SPEED * delta;
+    }
+    if (buttons.right.isDown) {
+        player.sprite.x += SPEED * delta;
+    }
+    if (buttons.up.isDown) {
+        player.sprite.y -= SPEED * delta;
+    }
+    if (buttons.down.isDown) {
+        player.sprite.y += SPEED * delta;
+    }
+    player.bindSpriteInScreen();
+    if (!gameEnded) {
+        if (buttons.a.isDown || buttons.control.isDown || buttons.z.isDown || autofire) {
+            player.attemptFire();
+        }
+    }
+    if (showColliders) {
+        stage.removeChild(temporaryGraphics);
+        temporaryGraphics = new PIXI.Graphics();
+    }
+    for (var i = enemies.length - 1; i >= 0; i--) {
+        var enemy = enemies[i];
+        enemy.update(delta);
+        if (showColliders) {
+            enemy.collider.draw(temporaryGraphics, 0xFF0000);
+        }
+        if (enemy.isOutOfGame()) {
+            stage.removeChild(enemy.sprite);
+            enemies.splice(i, 1);
+        }
+    }
+    for (var i = bullets.length - 1; i >= 0; i--) {
+        var bullet = bullets[i];
+        bullet.update(delta);
+        if (showColliders) {
+            bullet.collider.draw(temporaryGraphics, bullet.friendly ? Colors.LightGreen : 0xFF0000);
+        }
+        if (bullet.isOutOfGame()) {
+            stage.removeChild(bullet.sprite);
+            bullets.splice(i, 1);
+        }
+    }
+    player.update(delta);
+    if (player.isOutOfGame()) {
+        stage.removeChild(player.sprite);
+    }
+    if (showColliders) {
+        player.collider.draw(temporaryGraphics, Colors.LuminousGreen);
+    }
+    if (enemies.length > 0) {
+        bossBar.update(enemies[0].hp);
+    }
+    playerBar.update(player.hp);
+    if (showColliders) {
+        stage.addChild(temporaryGraphics);
+    }
+});
 var LifeBar = (function () {
     function LifeBar(name, color, maxHP, y) {
         this.x = WIDTH - 310;
@@ -426,6 +586,41 @@ Colors.TrafficBlack = 0x1E1E1E;
 Colors.PapyrusWhite = 0xD7D7D7;
 Colors.PearlLightGrey = 0x9C9C9C;
 Colors.PearlDarkGrey = 0x828282;
+function openMenu() {
+    $("#mainmenu").show();
+}
+function giveUp() {
+    gameLost();
+    openMenu();
+}
+function pause() {
+    paused = true;
+    ticker.speed = 0;
+}
+function unpause() {
+    if (paused) {
+        paused = false;
+        ticker.speed = 1;
+    }
+}
+function togglePause() {
+    if (paused) {
+        unpause();
+    }
+    else {
+        pause();
+    }
+}
+function toggleAutoFire() {
+    autofire = !autofire;
+}
+$(window).blur(function () {
+    pause();
+});
+buttons.esc.release = giveUp;
+buttons.p.release = togglePause;
+buttons.pause.release = togglePause;
+buttons.space.release = toggleAutoFire;
 var Enemy = (function (_super) {
     __extends(Enemy, _super);
     function Enemy(sprite, collider, pattern) {
@@ -632,7 +827,7 @@ var PeriodicPattern = (function (_super) {
         }
     };
     PeriodicPattern.prototype.explain = function () {
-        return "periodic";
+        return "periodic-fire";
     };
     return PeriodicPattern;
 }(Pattern));
@@ -754,7 +949,7 @@ var CombinationPattern = (function (_super) {
             var p = _a[_i];
             x += p.explain() + " ";
         }
-        return "combine( " + x + ")";
+        return "[ " + x + "]";
     };
     return CombinationPattern;
 }(Pattern));
@@ -782,7 +977,7 @@ var FixedDuration = (function (_super) {
         }
     };
     FixedDuration.prototype.explain = function () {
-        return "wait";
+        return "fixed-time";
     };
     return FixedDuration;
 }(Pattern));
@@ -891,166 +1086,6 @@ var PlayerBar = (function (_super) {
     }
     return PlayerBar;
 }(LifeBar));
-function keyboard(keyCode) {
-    var key = {};
-    key.code = keyCode;
-    key.isDown = false;
-    key.isUp = true;
-    key.press = undefined;
-    key.release = undefined;
-    key.downHandler = function (event) {
-        if (buttons.handledKeys.indexOf(event.keyCode) == -1)
-            return;
-        if (event.keyCode === key.code) {
-            if (key.isUp && key.press)
-                key.press();
-            key.isDown = true;
-            key.isUp = false;
-        }
-        if (event.keyCode != 80 && event.keyCode != 19) {
-            unpause();
-        }
-        event.preventDefault();
-    };
-    key.upHandler = function (event) {
-        if (buttons.handledKeys.indexOf(event.keyCode) == -1)
-            return;
-        if (event.keyCode === key.code) {
-            if (key.isDown && key.release)
-                key.release();
-            key.isDown = false;
-            key.isUp = true;
-        }
-        event.preventDefault();
-    };
-    window.addEventListener("keydown", key.downHandler.bind(key), false);
-    window.addEventListener("keyup", key.upHandler.bind(key), false);
-    return key;
-}
-var buttons = {
-    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27],
-    left: keyboard(37),
-    right: keyboard(39),
-    down: keyboard(40),
-    up: keyboard(38),
-    control: keyboard(17),
-    a: keyboard(65),
-    f2: keyboard(113),
-    space: keyboard(32),
-    r: keyboard(82),
-    z: keyboard(90),
-    shift: keyboard(16),
-    p: keyboard(80),
-    pause: keyboard(19),
-    esc: keyboard(27)
-};
-var WIDTH = 1280;
-var HEIGHT = 720;
-var renderer = PIXI.autoDetectRenderer(WIDTH, HEIGHT, { backgroundColor: 0x1099bb });
-var stage = new PIXI.Container();
-var ticker = new PIXI.ticker.Ticker();
-ticker.add(function () { return renderer.render(stage); });
-ticker.start();
-renderer.render(stage);
-$(document).ready(function () {
-    document.getElementById("viewport").appendChild(renderer.view);
-    reset();
-});
-var enemies = [];
-var bullets = [];
-var player;
-var bossBar;
-var playerBar;
-var basicText;
-var showColliders = false;
-function createBulletSprite(x, y, img) {
-    var sprite = PIXI.Sprite.fromImage("img/" + img);
-    sprite.x = x;
-    sprite.y = y;
-    sprite.anchor.x = 0.5;
-    sprite.anchor.y = 0.5;
-    return sprite;
-}
-ticker.speed = 1;
-buttons.f2.release = function () {
-    showColliders = !showColliders;
-    stage.removeChild(temporaryGraphics);
-};
-buttons.r.release = function () {
-    reset();
-};
-buttons.shift.press = function () {
-    if (difficulty <= DIFFICULTY_EASY) {
-        ticker.speed = 0.5;
-    }
-    else {
-        ticker.speed = 1;
-    }
-};
-buttons.shift.release = function () {
-    ticker.speed = 1;
-};
-ticker.add(function (delta) {
-    basicText.text = "FPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + enemies[0].pattern.explain();
-    if (buttons.left.isDown) {
-        player.sprite.x -= SPEED * delta;
-    }
-    if (buttons.right.isDown) {
-        player.sprite.x += SPEED * delta;
-    }
-    if (buttons.up.isDown) {
-        player.sprite.y -= SPEED * delta;
-    }
-    if (buttons.down.isDown) {
-        player.sprite.y += SPEED * delta;
-    }
-    player.bindSpriteInScreen();
-    if (!gameEnded) {
-        if (buttons.a.isDown || buttons.control.isDown || buttons.z.isDown || autofire) {
-            player.attemptFire();
-        }
-    }
-    if (showColliders) {
-        stage.removeChild(temporaryGraphics);
-        temporaryGraphics = new PIXI.Graphics();
-    }
-    for (var i = enemies.length - 1; i >= 0; i--) {
-        var enemy = enemies[i];
-        enemy.update(delta);
-        if (showColliders) {
-            enemy.collider.draw(temporaryGraphics, 0xFF0000);
-        }
-        if (enemy.isOutOfGame()) {
-            stage.removeChild(enemy.sprite);
-            enemies.splice(i, 1);
-        }
-    }
-    for (var i = bullets.length - 1; i >= 0; i--) {
-        var bullet = bullets[i];
-        bullet.update(delta);
-        if (showColliders) {
-            bullet.collider.draw(temporaryGraphics, bullet.friendly ? Colors.LightGreen : 0xFF0000);
-        }
-        if (bullet.isOutOfGame()) {
-            stage.removeChild(bullet.sprite);
-            bullets.splice(i, 1);
-        }
-    }
-    player.update(delta);
-    if (player.isOutOfGame()) {
-        stage.removeChild(player.sprite);
-    }
-    if (showColliders) {
-        player.collider.draw(temporaryGraphics, Colors.LuminousGreen);
-    }
-    if (enemies.length > 0) {
-        bossBar.update(enemies[0].hp);
-    }
-    playerBar.update(player.hp);
-    if (showColliders) {
-        stage.addChild(temporaryGraphics);
-    }
-});
 var autofire;
 var paused = false;
 var difficulty = DIFFICULTY_NORMAL;
@@ -1059,39 +1094,4 @@ var DIFFICULTY_EASY = 2;
 var DIFFICULTY_NORMAL = 3;
 var DIFFICULTY_HARD = 4;
 var DIFFICULTY_FRUSTRATING = 5;
-function openMenu() {
-    $("#mainmenu").show();
-}
-function giveUp() {
-    gameLost();
-    openMenu();
-}
-function pause() {
-    paused = true;
-    ticker.speed = 0;
-}
-function unpause() {
-    if (paused) {
-        paused = false;
-        ticker.speed = 1;
-    }
-}
-function togglePause() {
-    if (paused) {
-        unpause();
-    }
-    else {
-        pause();
-    }
-}
-function toggleAutoFire() {
-    autofire = !autofire;
-}
-$(window).blur(function () {
-    pause();
-});
-buttons.esc.release = giveUp;
-buttons.p.release = togglePause;
-buttons.pause.release = togglePause;
-buttons.space.release = toggleAutoFire;
 //# sourceMappingURL=compiled-code.js.map
