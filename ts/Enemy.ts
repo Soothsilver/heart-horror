@@ -1,6 +1,8 @@
 ﻿class Enemy extends Item {
 
     public hp: number;
+    public isBoss: boolean;
+    public bossbar: BossBar;
 
     public loseHP(lost: number) {
         this.hp -= lost;
@@ -11,7 +13,7 @@
     }
     public update(delta: number) {
         super.update(delta);
-        if (!player.indestructible && player.collider.intersects(this.collider)) {
+        if (!this.harmless && !player.indestructible && player.collider.intersects(this.collider)) {
             player.loseHP(1);
         }
     }

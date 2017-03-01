@@ -13,7 +13,7 @@
             key.isDown = true;
             key.isUp = false;
         }
-        if (event.keyCode != 80 && event.keyCode != 19) {
+        if (event.keyCode != 80 && event.keyCode != 19 && event.keyCode != 27) {
             unpause();
         }
         event.preventDefault();

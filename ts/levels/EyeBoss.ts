@@ -1,33 +1,35 @@
 ﻿function createEyeBoss() : Pattern {
     var bossMovement =
-        new RepeatPattern(() => [
-            new RepeatPattern(() =>
-                [
-                    new FixedDuration(120).While(shooting).While(rotating),
-                    new SimpleMove(-400, 0, 100).While(atPlayer),
-                    new FixedDuration(30).While(shooting2),
-                    new SimpleMove(800, 0, 200).While(atPlayer),
-                    new FixedDuration(30).While(shooting2),
-                    new SimpleMove(-400, 0, 100).While(atPlayer),
-                ], 1),
-            new RandomPattern([
-                new SequencePattern([
-                    new SimpleMove(0, 200, 50),
-                    new OneShot(fireBombs),
-                    new SimpleMove(0, -200, 50),
-                ]),
-                new SequencePattern([
-                    new SimpleMove(500, 200, 100),
-                    new OneShot((boss) => {
-                        var laserSprite = createBulletSprite(boss.x(), boss.y() + 300, "blueLaser.png");
-                        laserSprite.scale.y = 7;
-                        var bb = new Bullet(false, laserSprite,
-                            new RectangleCollider(), new FollowLeaderX(boss).While(new FixedDuration(500)).Then(new OneShot((laser) => laser.gone = true)));
-                        bb.indestructible = true;
-                        spawnBullet(bb);
-                    }),
-                    new SimpleMove(-1000, 0, 500).While(atPlayer),
-                    new SimpleMove(500, -200, 100),
+        new SequencePattern([
+            new RepeatPattern(() => [
+                new RepeatPattern(() =>
+                    [
+                        new FixedDuration(120).While(shooting).While(rotating),
+                        new SimpleMove(-400, 0, 100).While(atPlayer),
+                        new FixedDuration(30).While(shooting2),
+                        new SimpleMove(800, 0, 200).While(atPlayer),
+                        new FixedDuration(30).While(shooting2),
+                        new SimpleMove(-400, 0, 100).While(atPlayer),
+                    ], 1),
+                new RandomPattern([
+                    new SequencePattern([
+                        new SimpleMove(0, 200, 50),
+                        new OneShot(fireBombs),
+                        new SimpleMove(0, -200, 50),
+                    ]),
+                    new SequencePattern([
+                        new SimpleMove(500, 200, 100),
+                        new OneShot((boss) => {
+                            var laserSprite = createBulletSprite(boss.x(), boss.y() + 300, "blueLaser.png");
+                            laserSprite.scale.y = 7;
+                            var bb = new Bullet(false, laserSprite,
+                                new RectangleCollider(laserSprite.width, laserSprite.height), new FollowLeaderX(boss).While(new FixedDuration(500)).Then(new OneShot((laser) => laser.gone = true)));
+                            bb.indestructible = true;
+                            spawnBullet(bb);
+                        }),
+                        new SimpleMove(-1000, 0, 500).While(atPlayer),
+                        new SimpleMove(500, -200, 100),
+                    ])
                 ])
             ])
         ]);
@@ -51,7 +53,7 @@
                         var bs = new Bullet(false, smll, new CircleCollider(5),
                             new SequencePattern([
                                 new UniformMovementPattern(xs, ys).While(new FixedDuration(60)),
-                                new OneShot((risk) => risk.gone = true)
+                                new UniformMovementPattern(xs, ys).While(new DisappearingPattern(10))
                             ]));
                         spawnBullet(bs);
                     }

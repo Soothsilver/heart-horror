@@ -75,6 +75,13 @@ class Rectangle {
     }
 }
 class RectangleCollider extends Collider {
+    private width: number;
+    private height: number;
+    public constructor(w: number, h: number) {
+        super();
+        this.width = w;
+        this.height = h;
+    }
     public intersects(other: Collider): boolean {
         if (other instanceof CircleCollider) {
             return Collisions.CircleRectangle(other as CircleCollider, this);
@@ -85,10 +92,10 @@ class RectangleCollider extends Collider {
         throw "ERROR";
     }
     public getRectangle(): Rectangle {
-        return new Rectangle(this.item.sprite.x - this.item.sprite.width / 2,
-            this.item.sprite.y - this.item.sprite.height / 2,
-            this.item.sprite.width * this.item.sprite.scale.x,
-            this.item.sprite.height * this.item.sprite.scale.y);
+        return new Rectangle(this.item.sprite.x - this.width / 2,
+            this.item.sprite.y - this.height / 2,
+            this.width * this.item.sprite.scale.x,
+            this.height * this.item.sprite.scale.y);
     }
     public draw(g: PIXI.Graphics, color: number) {
         g.lineStyle(1, color, 1);

@@ -10,22 +10,16 @@ ticker.start();
 renderer.render(stage);
 $(document).ready(() => {
     document.getElementById("viewport").appendChild(renderer.view);
-    reset();
+    startLevel(Levels.DeepEye);
 });
-// Player and boss
-var enemies: Enemy[] = [];
-var bullets: Bullet[] = [];
-var player: Player;
-
  
 
 // Interface
-var bossBar: BossBar;
 var playerBar: PlayerBar;
 var basicText: PIXI.Text;
 var showColliders: boolean = false; 
 
-
+ 
 function createBulletSprite(x: number, y: number, img: string): PIXI.Sprite {
     var sprite = PIXI.Sprite.fromImage("img/" + img);
     sprite.x = x;
@@ -40,7 +34,7 @@ buttons.f2.release = function () {
     stage.removeChild(temporaryGraphics);
 }
 buttons.r.release = function () { 
-    reset();
+    fastReset();
 }
 buttons.shift.press = function () {
     if (difficulty <= DIFFICULTY_EASY) {
@@ -54,25 +48,29 @@ buttons.shift.release = function () {
         ticker.speed = 1;
 }
 
+var difficulty: number = 3;
 
 ticker.add(function (delta) {
-    basicText.text = "FPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + enemies[0].pattern.explain();
-    if (buttons.left.isDown) {
-        player.sprite.x -= SPEED * delta;
-    }
-    if (buttons.right.isDown) {
-        player.sprite.x += SPEED * delta;
-    }
-    if (buttons.up.isDown) {
-        player.sprite.y -= SPEED * delta;
-    }
-    if (buttons.down.isDown) {
-        player.sprite.y += SPEED * delta;
-    }
-    player.bindSpriteInScreen();
-    if (!gameEnded) {
-        if (buttons.a.isDown || buttons.control.isDown || buttons.z.isDown || autofire) {
-            player.attemptFire(); 
+    basicText.text = "Difficulty: " + difficultyToString(difficulty) + "\nFPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + (enemies.length > 0 ? enemies[0].pattern.explain() : "");
+
+    if (player.controllable) {
+        if (buttons.left.isDown) {
+            player.sprite.x -= SPEED * delta;
+        }
+        if (buttons.right.isDown) {
+            player.sprite.x += SPEED * delta;
+        }
+        if (buttons.up.isDown) {
+            player.sprite.y -= SPEED * delta;
+        }
+        if (buttons.down.isDown) {
+            player.sprite.y += SPEED * delta;
+        }
+        player.bindSpriteInScreen();
+        if (!gameEnded) {
+            if (buttons.a.isDown || buttons.control.isDown || buttons.z.isDown || autofire) {
+                player.attemptFire();
+            }
         }
     }
     if (showColliders) {
@@ -108,8 +106,10 @@ ticker.add(function (delta) {
     if (showColliders) {
         player.collider.draw(temporaryGraphics, Colors.LuminousGreen);
     }
-    if (enemies.length > 0) {
-        bossBar.update(enemies[0].hp);
+    for (var en of enemies) {
+        if (en.bossbar != null) {
+            en.bossbar.update(en.hp);
+        }
     }
     playerBar.update(player.hp);
     if (showColliders) {

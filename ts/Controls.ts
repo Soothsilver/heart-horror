@@ -1,18 +1,50 @@
-﻿function openMenu() {
-    $("#mainmenu").show();
+﻿var menuOpen: boolean = false;
+function openMenu() {
+    menuOpen = true;
+    $("#mainmenu").show(100);
 }
 function giveUp() {
-    gameLost();
-    openMenu();
+    if (menuOpen) {
+        resume();
+    }
+    else {
+        pause();
+        openMenu();
+    }
+}
+function resume() {
+    $("#controls").hide();
+    $("#howToPlay").hide();
+    $("#mainmenu").hide(100);
+    menuOpen = false;
+}
+function openLevel(level: number) {
+    resume();
+    startLevel(level);
+    unpause();
+}
+function fastReset() {
+    doIntro = false;
+    reset();
 }
 function pause() {
-    paused = true;
-    ticker.speed = 0;
+    if (!paused) {
+        paused = true;
+        ticker.speed = 0;
+        stage.addChild(pauseScreen);
+        for (var e of animatedEntities) {
+            e.stop();
+        }
+    }
 }
 function unpause() {
-    if (paused) {
+    if (paused && !menuOpen) {
         paused = false;
         ticker.speed = 1;
+        stage.removeChild(pauseScreen);
+        for (var e of animatedEntities) {
+            e.play();
+        }
     }
 }
 function togglePause() {
@@ -21,6 +53,12 @@ function togglePause() {
     } else {
         pause();
     }
+}
+function showControls() {
+    $("#controls").show(100);
+}
+function showHowToPlay() {
+    $("#howToPlay").show(100);
 }
 function toggleAutoFire() {
     autofire = !autofire;

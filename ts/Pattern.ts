@@ -32,6 +32,41 @@ class OneShot extends Pattern {
         this.spent = true;
     }
 }
+class DisappearingPattern extends Pattern {
+    private speed: number;
+    constructor(time: number) {
+        super();
+        this.speed = 1 / time;
+    }
+    public update(delta: number, item: Item) {
+        item.sprite.alpha -= delta * this.speed;
+        if (item.sprite.alpha <= 0) {
+            item.sprite.alpha = 0;
+            this.spent = true;
+            item.gone = true;
+        }
+    }
+    public explain(): string {
+        return "fade";
+    }
+}
+class AppearingPattern extends Pattern {
+    private speed: number;
+    constructor(time: number) {
+        super();
+        this.speed = 1 / time;
+    }
+    public update(delta: number, item: Item) {
+        item.sprite.alpha += delta * this.speed;
+        if (item.sprite.alpha >= 1) {
+            item.sprite.alpha = 1;
+            this.spent = true;
+        }
+    }
+    public explain(): string {
+        return "fade-in";
+    }
+}
 class PeriodicPattern extends Pattern {
     private periodTime: number;
     private timeUntilPeriod: number;
@@ -143,6 +178,25 @@ class RandomPattern extends SequencePattern {
     }
     constructor(patterns: Pattern[]) {
         super([RandomPattern.getRandomPattern(patterns)]);
+    }
+}
+class Both extends Pattern {
+    private patterns: Pattern[];
+    constructor(patterns: Pattern[]) {
+        super();
+        this.patterns = patterns;
+    }
+    public update(delta: number, item: Item) {
+        for (var p of this.patterns) {
+            p.update(delta, item);
+        }
+    }
+    public explain(): string {
+        var x: string = "";
+        for (var p of this.patterns) {
+            x += p.explain() + " ";
+        }
+        return "{ " + x + "}";
     }
 }
 class CombinationPattern extends Pattern {

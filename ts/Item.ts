@@ -1,8 +1,9 @@
 ﻿abstract class Item {
-    public sprite: PIXI.Sprite;
+    public sprite: PIXI.DisplayObject;
     public collider: Collider;
     public pattern: Pattern;
     public gone: boolean;
+    public harmless: boolean;
     public tags: { [tag: string]: number } = {};
 
     public update(delta: number) {
@@ -15,11 +16,16 @@
         return this.sprite.y;
     }
 
-    public isOutOfGame(): boolean {
-        return this.sprite.x < -200 || this.sprite.y < -200 || this.sprite.x > WIDTH + 200 || this.sprite.y > HEIGHT+200 || this.gone;
+    public fadeout() {
+        this.harmless = true;
+        this.pattern = new Both([this.pattern, new DisappearingPattern(60)]);
     }
 
-    protected constructor(sprite: PIXI.Sprite, collider: Collider, pattern : Pattern) {
+    public isOutOfGame(): boolean {
+        return this.sprite.x < -200 || this.sprite.y < -1000 || this.sprite.x > WIDTH + 200 || this.sprite.y > HEIGHT+200 || this.gone;
+    }
+
+    protected constructor(sprite: PIXI.DisplayObject, collider: Collider, pattern: Pattern) {
         this.sprite = sprite;
         this.collider = collider;
         this.collider.item = this;
