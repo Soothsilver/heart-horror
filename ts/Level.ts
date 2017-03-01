@@ -7,7 +7,7 @@ var loadedLevel: number;
 var doIntro: boolean;
 
 
-var pauseScreen: PIXI.Container;
+var pauseScreen: PIXI.Container = new PIXI.Container();
 function addBulletToStage(sprite: PIXI.DisplayObject) {
     stage.addChildAt(sprite, stage.getChildIndex(separatorGraphics));
 }
