@@ -13,6 +13,9 @@
             key.isDown = true;
             key.isUp = false;
         }
+        if (event.keyCode != 80 && event.keyCode != 19) {
+            unpause();
+        }
         event.preventDefault();
     };
 
@@ -38,7 +41,7 @@
 }
 var buttons = {
     
-    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82],
+    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27],
     left: keyboard(37),
     right: keyboard(39),
     down: keyboard(40),
@@ -47,5 +50,10 @@ var buttons = {
     a: keyboard(65),
     f2: keyboard(113),
     space: keyboard(32),
-    r : keyboard(82)
+    r: keyboard(82),
+    z: keyboard(90),
+    shift: keyboard(16),
+    p: keyboard(80),
+    pause: keyboard(19),
+    esc: keyboard(27)
 };

@@ -1,4 +1,5 @@
-﻿class Bullet extends Item {
+﻿/// <reference path="Item.ts" />
+class Bullet extends Item {
     public friendly: boolean;
     private damage: number = 1;
     public indestructible: boolean;

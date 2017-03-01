@@ -1,0 +1,16 @@
+﻿{
+
+  "compileOnSave": true,
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "outFile": "./generated/compiled-code.js",
+    "sourceMap": true
+  },
+  "include": [
+    "ts/**/*",
+    "main.ts",
+    "lib/**/*.ts"
+  ]
+}

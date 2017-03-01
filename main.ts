@@ -8,7 +8,10 @@ ticker.start();
 //renderer.resize(20, 20);
 
 renderer.render(stage);
-document.getElementById("viewport").appendChild(renderer.view);
+$(document).ready(() => {
+    document.getElementById("viewport").appendChild(renderer.view);
+    reset();
+});
 // Player and boss
 var enemies: Enemy[] = [];
 var bullets: Bullet[] = [];
@@ -22,7 +25,6 @@ var playerBar: PlayerBar;
 var basicText: PIXI.Text;
 var showColliders: boolean = false; 
 
-reset();
 
 function createBulletSprite(x: number, y: number, img: string): PIXI.Sprite {
     var sprite = PIXI.Sprite.fromImage("img/" + img);
@@ -32,7 +34,7 @@ function createBulletSprite(x: number, y: number, img: string): PIXI.Sprite {
     sprite.anchor.y = 0.5; 
     return sprite;
 }
-ticker.speed = 0.5;
+ticker.speed = 1;
 buttons.f2.release = function () {
     showColliders = !showColliders;
     stage.removeChild(temporaryGraphics);
@@ -40,10 +42,21 @@ buttons.f2.release = function () {
 buttons.r.release = function () { 
     reset();
 }
+buttons.shift.press = function () {
+    if (difficulty <= DIFFICULTY_EASY) {
+        ticker.speed = 0.5;
+    }
+    else {
+        ticker.speed = 1;
+    }
+}
+buttons.shift.release = function () {
+        ticker.speed = 1;
+}
 
-var boss = enemies[0];
+
 ticker.add(function (delta) {
-    basicText.text = "FPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + boss.pattern.explain();
+    basicText.text = "FPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + enemies[0].pattern.explain();
     if (buttons.left.isDown) {
         player.sprite.x -= SPEED * delta;
     }
@@ -58,7 +71,7 @@ ticker.add(function (delta) {
     }
     player.bindSpriteInScreen();
     if (!gameEnded) {
-        if (buttons.a.isDown || buttons.control.isDown || buttons.space.isDown) {
+        if (buttons.a.isDown || buttons.control.isDown || buttons.z.isDown || autofire) {
             player.attemptFire(); 
         }
     }

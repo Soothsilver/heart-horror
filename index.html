@@ -3,9 +3,26 @@
 <head>
     <meta charset="utf-8" />
     <title>Heart Horror</title>
-    <script src="lib/pixi.js"></script>
-    <script src="lib/keyboard.js"></script>
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"
+            integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+            crossorigin="anonymous"></script>
 
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script src="lib/pixi.js"></script>
+    <!--
+    <script src="lib/keyboard.js"></script>
+    -->
+
+    <script src="generated/compiled-code.js"></script>
+    <!--
     <script src="ts/Item.js"></script>
     <script src="ts/Collider.js"></script>
     <script src="ts/Bullet.js"></script>
@@ -17,15 +34,110 @@
     <script src="ts/PlayerBar.js"></script>
     <script src="ts/BossBar.js"></script>
     <script src="ts/Colors.js"></script>
-    <script src="ts/Level.js"></script>
+    <script src="ts/Level.js"></script>-->
+    <style>
+        .left {
+            float: left;
+        }
+        .mainmenu-panel {
+            position: fixed;
+            top: 10%;
+            left: 20%;
+            width: 60%;
+        }
+        .mylabel {
+            font-weight: normal;
+            padding-left: 3px;
+        }
+    </style>
 </head>
 <body>
-    <center>
-        <div id="viewport">
-
+    <div align="center">
+        <div id="viewport" style="padding-top: 10px; padding-bottom: 5px;">
         </div>
-        <button onclick="reset();">Reset [R]</button>
-    </center>
-    <script src="main.js"></script>
+        <div align="center">
+            <span>Use <b>Z</b>, <b>Ctrl</b> or <b>A</b> keys to fire.</span>
+            <button onclick="toggleAutoFire();" class="btn btn-primary">Toggle auto-fire [Space]</button>
+            <button onclick="togglePause();" class="btn btn-default">Pause [P/click outside]</button>
+            <button onclick="reset();" class="btn btn-danger">Reset [R]</button>
+            <button onclick="giveUp();" class="btn btn-default">Give up [Esc]</button>
+        </div>
+        <div id="mainmenu" class="mainmenu-panel panel panel-primary">
+            <div class="panel-heading">Heart Horror</div>
+            <div class="panel-body">
+                The Earth is under attack by <b>Vast Horrors</b> from the Undersea! Select a stage to defend us from the monsters!!
+                <br>
+                <br>
+                <table style="border-spacing: 10px; border-collapse: separate"
+                    <tr>
+                        <td>
+                            <button class="btn btn-primary">
+                                <img src="img/eye/eye0.png" width="64">
+                                <br>
+                                <b>DEEP EYE</b><br>Vanguard of the Vast Horrors
+                            </button>
+                        </td>
+                        <td style="height:100px;"> 
+                                <button class="btn btn-primary btn-block" style="height: 100%; width: 100%;">
+                                    <img src="img/boss/blackship.png" width="64">
+                                    <br>
+                                    <b>ALIEN VESSEL</b><br>The Horrors have technology?!
+                                </button>
+                        </td>
+                        <td style="height:100px;">
+                            <button class="btn btn-primary btn-block" style="height: 100%; width: 100%;">
+                                <img src="img/boss/octopus.png" width="64">
+                                <br>
+                                <b>TENTACLE BOSS</b><br>It That Releases Terror
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <button class="btn btn-primary">
+                                <img src="img/boss/stargate.png" width="64">
+                                <br>
+                                <b>MYSTERIOUS PORTAL</b><br>Gateway of Channeled Fear
+                            </button>
+                        </td>
+                        <td style="height:100px; vertical-align: bottom;">
+                            <button class="btn btn-primary btn-block" style="height: 100%; width: 100% ; ">
+                                <img src="img/boss/redship.jpg" width="64">
+                                <br>
+                                <b>COMMAND VESSEL</b><br>Leaders of the Vast Horrors
+                            </button>
+                        </td>
+                        <td style="height:100px;">
+                            <button class="btn btn-primary btn-block" style="height: 100%; width: 100%;">
+                                <img src="img/boss/doubleEye.png" width="64">
+                                <br>
+                                <b>DEEP EYES</b><br>Two of them
+                            </button>
+                        </td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <div style="text-align: left; font-weight: normal;">
+                    <button class="btn btn-default">Enable all stages</button>
+                    <button class="btn btn-default">View controls</button>
+                    <button class="btn btn-default">How to play </button>
+                </div>
+                <br>
+                <div style="text-align: left; font-weight: normal;">
+                    <input type="checkbox" id="skipConfirmation"><label class="mylabel "for="skipConfirmation">Skip confirmation dialog when entering a stage</label>
+                    <br>
+                    Difficulty: 
+                    <select id="difficulty">
+                        <option value="1">Very easy (much more HP, enemy less HP, hold SHIFT to slow down time)</option>
+                        <option value="2">Easy (more HP, hold SHIFT to slow down time)</option>
+                        <option value="3">Normal</option>
+                        <option value="4">Hard (less HP, enemy more HP)</option>
+                        <option value="5">Frustrating (much less HP, enemy much more HP)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
