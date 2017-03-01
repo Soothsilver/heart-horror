@@ -5,6 +5,8 @@ var DIFFICULTY_EASY = 2;
 var DIFFICULTY_NORMAL = 3;
 var DIFFICULTY_HARD = 4;
 var DIFFICULTY_FRUSTRATING = 5;
+var skipIntro: boolean = false;
+var pauseWhenClickOut: boolean = true;
 
 function changeDifficulty() {
     difficulty = parseInt($("#difficulty").val());

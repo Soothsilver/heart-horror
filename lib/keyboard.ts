@@ -41,7 +41,7 @@
 }
 var buttons = {
     
-    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27],
+    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27, 70],
     left: keyboard(37),
     right: keyboard(39),
     down: keyboard(40),
@@ -55,5 +55,6 @@ var buttons = {
     shift: keyboard(16),
     p: keyboard(80),
     pause: keyboard(19),
-    esc: keyboard(27)
+    esc: keyboard(27),
+    f: keyboard(70)
 };

@@ -10,7 +10,7 @@ ticker.start();
 renderer.render(stage);
 $(document).ready(() => {
     document.getElementById("viewport").appendChild(renderer.view);
-    startLevel(Levels.DeepEye);
+    startLevel(Levels.AlienVessel);
 });
  
 
@@ -46,6 +46,12 @@ buttons.shift.press = function () {
 }
 buttons.shift.release = function () {
         ticker.speed = 1;
+}
+buttons.f.press = function () {
+    ticker.speed = 2;    
+}
+buttons.f.release = function () {
+    ticker.speed = 1;
 }
 
 var difficulty: number = 3;

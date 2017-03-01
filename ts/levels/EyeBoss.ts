@@ -1,4 +1,23 @@
-﻿function createEyeBoss() : Pattern {
+﻿function createEyeBossBoss(): Enemy {
+    var frammes: PIXI.Texture[] = [];
+    for (var i = 0; i < 8; i++) {
+        frammes.push(PIXI.Texture.fromImage('img/eye/eye' + i + '.png'));
+    }
+    var enemySprite = new PIXI.extras.AnimatedSprite(frammes);
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    enemySprite.animationSpeed = 0.2;
+    enemySprite.play();
+    animatedEntities.push(enemySprite);
+    var boss: Enemy = new Enemy(enemySprite, new CircleCollider(143), createEyeBoss());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+function createEyeBoss(): Pattern {
     var bossMovement =
         new SequencePattern([
             new RepeatPattern(() => [

@@ -64,7 +64,9 @@ function toggleAutoFire() {
     autofire = !autofire;
 }
 $(window).blur(function () {
-    pause();
+    if (pauseWhenClickOut) {
+        pause();
+    }
 });
 buttons.esc.release = giveUp;
 buttons.p.release = togglePause;

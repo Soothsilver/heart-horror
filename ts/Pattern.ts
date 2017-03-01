@@ -172,6 +172,23 @@ class SequencePattern extends RepeatPattern {
         super(() => patterns, 1);
     }
 }
+class CustomPattern extends Pattern {
+    private func: (item: Item) => Pattern;
+    private pattern: Pattern;
+    constructor(func: (item: Item) => Pattern) {
+        super();
+        this.func = func;
+    }
+    public update(delta: number, item: Item) {
+        if (this.pattern == null) {
+            this.pattern = this.func(item);
+        }
+        this.pattern.update(delta, item);
+        if (this.pattern.spent) {
+            this.spent = true;
+        }
+    }
+}
 class RandomPattern extends SequencePattern {
     private static getRandomPattern(patterns: Pattern[]): Pattern {
         return patterns[getRandomExclusive(0, patterns.length)];

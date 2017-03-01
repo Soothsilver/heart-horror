@@ -9,21 +9,29 @@ var gameEnded: boolean;
 
 function gameWon() {
     clearEnemies()
-    clearBullets();
+    clearEnemyBullets();
     gameEnded = true;
 }
 function gameLost() {
     gameEnded = true;
-    clearBullets();
+    clearFriendlyBullets();
     playerBar.remove();
+}
+
+function clearFriendlyBullets() {
+    for (var en of bullets) {
+        if (en.friendly)
+        en.fadeout();
+    }
 }
 function clearEnemies() {
     for (var en of enemies) {
         en.fadeout();
     }
 }
-function clearBullets() {
+function clearEnemyBullets() {
     for (var en of bullets) {
+        if (!en.friendly)
         en.fadeout();
     }
 }

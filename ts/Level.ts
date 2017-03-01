@@ -14,15 +14,13 @@ function addBulletToStage(sprite: PIXI.DisplayObject) {
 var separatorGraphics: PIXI.Graphics;
 function startLevel(level: number) {
     loadedLevel = level;
-    doIntro = true;
+    doIntro = !skipIntro;
     reset();
 }
 var INTRO_TIME = 240;
 var animatedEntities: PIXI.extras.AnimatedSprite[];
 function reset() {
     stage.removeChildren();
-    separatorGraphics = new PIXI.Graphics();
-    stage.addChild(separatorGraphics);
     bullets = [];
     enemies = [];
     animatedEntities = [];
@@ -39,6 +37,8 @@ function reset() {
     // Apply difficulty settings
     applyDifficultySettings();
 
+    separatorGraphics = new PIXI.Graphics();
+    stage.addChild(separatorGraphics);
     // Pause
     pauseScreen = new PIXI.Container();
     pauseScreen.x = 0;
@@ -67,25 +67,10 @@ function reset() {
     pauseScreen.addChild(pauseText2);
 }
 function spawnBosses(level : number, doIntro : boolean) {
-    var frammes: PIXI.Texture[] = [];
-    for (var i = 0; i < 8; i++) {
-        frammes.push(PIXI.Texture.fromImage('img/eye/eye' + i + '.png'));
-    }
-    var enemySprite = new PIXI.extras.AnimatedSprite(frammes);
-    enemySprite.x = WIDTH / 2;
-    enemySprite.y = HEIGHT * 1 / 5;
-    enemySprite.anchor.x = 0.5;
-    enemySprite.anchor.y = 0.5;
-    enemySprite.animationSpeed = 0.2;
-    enemySprite.play();
-    animatedEntities.push(enemySprite);
-    var boss: Enemy = new Enemy(enemySprite, new CircleCollider(143), createEyeBoss());
-    boss.hp = 800;
-    boss.isBoss = true;
-    boss.bossbar = new BossBar(boss.hp);
-    
+
+    var boss: Enemy = Levels.getLevel(level).bossCreation();
     if (doIntro) {
-        enemySprite.y = - HEIGHT * 3 / 5;
+        boss.sprite.y = - HEIGHT * 3 / 5;
         boss.pattern = new SequencePattern([
             new OneShot(() => {
                 var introbar = new PIXI.Container();
@@ -128,6 +113,6 @@ function spawnBosses(level : number, doIntro : boolean) {
             boss.pattern
         ]);
     }
-    stage.addChild(enemySprite);
+    stage.addChild(boss.sprite);
     enemies = [boss];
 }
