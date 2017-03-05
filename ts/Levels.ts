@@ -15,12 +15,20 @@ class Levels {
     public static TentacleBoss = 3;
     public static MysteriousPortal = 4;
     public static CommandVessel = 5;
-    public static DeepeEyes = 6;
+    public static DeepEyes = 6;
 
     public static getLevel(level: number) {
         switch (level) {
             case Levels.AlienVessel:
                 return new LevelDescription("Alien Vessel", "Is this boss random?!", createAlienVesselBoss);
+            case Levels.TentacleBoss:
+                return new LevelDescription("Tentacle Boss", "also called 'The Consumer of Souls'", createTentacleBoss)
+            case Levels.MysteriousPortal:
+                return new LevelDescription("Mysterious Portal", "Gateway of Channeled Fear", createPortal);
+            case Levels.CommandVessel:
+                return new LevelDescription("Command Vessel", "Behold the leader of the Vast Horrors!", createCommandVessel);
+            case Levels.DeepEyes:
+                return new LevelDescription("Deep Eyes", "Piece of cake, maybe?", createDeepEyes);
             case Levels.DeepEye:
             default:
                 return new LevelDescription("Deep Eye", "Vanguard of the Vast Horrors", createEyeBossBoss);

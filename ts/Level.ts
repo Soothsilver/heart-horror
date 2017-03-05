@@ -197,8 +197,8 @@ function spawnBosses(level : number, doIntro : boolean) {
                 bullets.push(b);
                 stage.addChild(b.sprite);
             }),
-            new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4),
-            new FixedDuration(INTRO_TIME * 1 /4),
+            new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4).Named("Boss enters the stage!"),
+            new FixedDuration(INTRO_TIME * 1 / 4).Named("Get ready!"),
             boss.pattern
         ]);
     }

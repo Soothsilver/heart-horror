@@ -242,8 +242,8 @@ function spawnBosses(level, doIntro) {
                 bullets.push(b);
                 stage.addChild(b.sprite);
             }),
-            new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4),
-            new FixedDuration(INTRO_TIME * 1 / 4),
+            new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4).Named("Boss enters the stage!"),
+            new FixedDuration(INTRO_TIME * 1 / 4).Named("Get ready!"),
             boss.pattern
         ]);
     }
@@ -939,6 +939,14 @@ var Levels = (function () {
         switch (level) {
             case Levels.AlienVessel:
                 return new LevelDescription("Alien Vessel", "Is this boss random?!", createAlienVesselBoss);
+            case Levels.TentacleBoss:
+                return new LevelDescription("Tentacle Boss", "also called 'The Consumer of Souls'", createTentacleBoss);
+            case Levels.MysteriousPortal:
+                return new LevelDescription("Mysterious Portal", "Gateway of Channeled Fear", createPortal);
+            case Levels.CommandVessel:
+                return new LevelDescription("Command Vessel", "Behold the leader of the Vast Horrors!", createCommandVessel);
+            case Levels.DeepEyes:
+                return new LevelDescription("Deep Eyes", "Piece of cake, maybe?", createDeepEyes);
             case Levels.DeepEye:
             default:
                 return new LevelDescription("Deep Eye", "Vanguard of the Vast Horrors", createEyeBossBoss);
@@ -951,7 +959,7 @@ Levels.AlienVessel = 2;
 Levels.TentacleBoss = 3;
 Levels.MysteriousPortal = 4;
 Levels.CommandVessel = 5;
-Levels.DeepeEyes = 6;
+Levels.DeepEyes = 6;
 var Pattern = (function () {
     function Pattern() {
         this.tags = {};
@@ -1325,6 +1333,9 @@ function createAlienVesselBoss() {
     boss.bossbar = new BossBar(boss.hp);
     return boss;
 }
+function radiansToDegrees(angle) {
+    return angle * 360 / (Math.PI * 2);
+}
 function degreesToRadian(angle) {
     return angle * Math.PI * 2 / 360;
 }
@@ -1337,7 +1348,7 @@ function circular(fromAngle, toAngle, totalShots, func) {
         var rotation = from + during * i / totalShots;
         var xs = 0.5 * Math.cos(rotation);
         var ys = 0.5 * Math.sin(rotation);
-        func(xs, ys);
+        func(xs, ys, rotation);
     }
 }
 var AlienVessel;
@@ -1730,6 +1741,163 @@ function applyDifficultySettings() {
     playerBar.maxHP = player.hp;
     player.maxHp = player.hp;
 }
+function createTentacleBoss() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), TentacleBoss.main());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+var TentacleBoss;
+(function (TentacleBoss) {
+    function throwSplittingBalls(boss) {
+        circular(45, 360 + 45, 8, function (xs, ys, rot) {
+            var orbSpeed = 5;
+            console.log(rot);
+            var orbs = createBulletSprite(boss.x(), boss.y(), "orb.png");
+            var origPattern = new UniformMovementPattern(xs * orbSpeed, ys * orbSpeed)
+                .While(new FixedDuration(60)
+                .Then(new OneShot(function (orig) {
+                orig.gone = true;
+                circular(radiansToDegrees(rot) - 30, radiansToDegrees(rot) + 30, 3, function (x2, y2, rot2) {
+                    var orbSpeed = 5;
+                    var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
+                    orbs.scale.x = 0.5;
+                    orbs.scale.y = 0.5;
+                    var orb = new Bullet(false, orbs, new CircleCollider(10), new UniformMovementPattern(x2 * orbSpeed, y2 * orbSpeed).While(new FixedDuration(60)
+                        .Then(new OneShot(function (orig) {
+                        orig.gone = true;
+                        circular(radiansToDegrees(rot2) - 30, radiansToDegrees(rot2) + 30, 3, function (x3, y3, rot3) {
+                            var orbSpeed = 5;
+                            var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
+                            orbs.scale.x = 0.25;
+                            orbs.scale.y = 0.25;
+                            var orb = new Bullet(false, orbs, new CircleCollider(5), new UniformMovementPattern(x3 * orbSpeed, y3 * orbSpeed));
+                            spawnBullet(orb);
+                        });
+                    }))));
+                    spawnBullet(orb);
+                });
+            })));
+            var orb = new Bullet(false, orbs, new CircleCollider(20), origPattern);
+            spawnBullet(orb);
+        });
+    }
+    function main() {
+        var atPlayer = new PeriodicPattern(16, function (boss) {
+            var BULLET_SPEED = 10;
+            var dx = (player.x() - boss.x());
+            var dy = (player.y() - boss.y());
+            var total = Math.sqrt(dx * dx + dy * dy);
+            var xs = BULLET_SPEED * dx / total;
+            var ys = BULLET_SPEED * dy / total;
+            var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
+            spawnBullet(b);
+        });
+        return new RepeatPattern(function () { return [
+            new RepeatPattern(function () { return [
+                new OneShot(throwSplittingBalls),
+                new SimpleMove(0, 100, 60).Named("'I spit death, puny human!'")
+            ]; }, 3),
+            new RepeatPattern(function () { return [
+                new OneShot(throwSplittingBalls),
+                new SimpleMove(0, -100, 60).Named("'I spit death, puny human!'")
+            ]; }, 3),
+            new FixedDuration(30),
+            new RepeatPattern(function () { return [
+                new CustomPattern(function (boss) {
+                    return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 30);
+                }),
+                new FixedDuration(30)
+            ]; }, 5),
+            new CustomPattern(function (boss) {
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
+            }),
+            new FixedDuration(120),
+            new SpecialPattern(function (delta, item, pattern) {
+                var xd = player.x() - item.x();
+                var yd = player.y() - item.y();
+            }).While(new FixedDuration(120)),
+            new CustomPattern(function (boss) {
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
+            }),
+            new OneShot(function (boss) {
+                circular(0, 360, 100, function (xs, ys, rot) {
+                    var speed = 14;
+                    var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * speed, ys * speed).While(new FixedDuration(60).Then(new DisappearingPattern(20))));
+                    spawnBullet(b);
+                });
+            }),
+            new FixedDuration(10),
+            new CustomPattern(function (boss) {
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT * 1 / 5 - boss.y(), 60);
+            }).While(atPlayer),
+        ]; });
+    }
+    TentacleBoss.main = main;
+})(TentacleBoss || (TentacleBoss = {}));
+function createPortal() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), Portal.main());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+var Portal;
+(function (Portal) {
+    function main() {
+        return new StandingPattern();
+    }
+    Portal.main = main;
+})(Portal || (Portal = {}));
+function createCommandVessel() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), CommandVessel.main());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+var CommandVessel;
+(function (CommandVessel) {
+    function main() {
+        return new StandingPattern();
+    }
+    CommandVessel.main = main;
+})(CommandVessel || (CommandVessel = {}));
+function createDeepEyes() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), DeepEyes.main());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+var DeepEyes;
+(function (DeepEyes) {
+    function main() {
+        return new StandingPattern();
+    }
+    DeepEyes.main = main;
+})(DeepEyes || (DeepEyes = {}));
 var Inscription = (function (_super) {
     __extends(Inscription, _super);
     function Inscription(sprite, pattern) {

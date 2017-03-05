@@ -11,10 +11,13 @@ function createAlienVesselBoss(): Enemy {
     boss.bossbar = new BossBar(boss.hp);
     return boss;
 }
+function radiansToDegrees(angle: number) {
+    return angle * 360 / (Math.PI * 2)
+}
 function degreesToRadian(angle: number) {
     return angle * Math.PI * 2 / 360;
 }
-function circular(fromAngle: number, toAngle: number, totalShots: number, func : (xs: number, ys: number) => void)
+function circular(fromAngle: number, toAngle: number, totalShots: number, func : (xs: number, ys: number, rot : number) => void)
 {
     var from = degreesToRadian(fromAngle);
     var to = degreesToRadian(toAngle);
@@ -24,7 +27,7 @@ function circular(fromAngle: number, toAngle: number, totalShots: number, func :
         var rotation = from + during * i / totalShots;
         var xs = 0.5 * Math.cos(rotation);
         var ys = 0.5 * Math.sin(rotation);
-        func(xs, ys);
+        func(xs, ys, rotation);
     }
 }
 namespace AlienVessel {
