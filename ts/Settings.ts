@@ -12,6 +12,17 @@ function changeDifficulty() {
     difficulty = parseInt($("#difficulty").val());
     stage.removeChildren();
     // TODO
+    window.localStorage.setItem("difficulty", difficulty.toString());
+}
+function loadLocalStorage() {
+    reloadAccessibleLevels();
+    reloadDifficulty();
+    reloadSkipConfirmation();
+}
+function enableAllStages() {
+    if (confirm("Enable all stages that you haven't reached yet?")) {        
+      saveLevelAsCompleted(10);
+    }
 }
 
 function difficultyToString(difficulty: number): string {
@@ -54,4 +65,5 @@ function applyDifficultySettings() {
         
     }
     playerBar.maxHP = player.hp;
+    player.maxHp = player.hp;
 }

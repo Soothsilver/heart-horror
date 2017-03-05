@@ -1,44 +1,22 @@
 ﻿var SPEED = 7;
 var temporaryGraphics: PIXI.Graphics;
 function spawnBullet(bullet: Bullet) {
+    if (gameEnded) {
+        bullet.harmless = true;
+        bullet.pattern = new CombinationPattern([bullet.pattern, new DisappearingPattern(60)]);
+    }
     bullets.push(bullet);
     addBulletToStage(bullet.sprite);
 }
 var BULLET_SPEED = 10;
 var gameEnded: boolean;
+var numberOfBossesRemaining: number = 1;
 
-function gameWon() {
-    clearEnemies()
-    clearEnemyBullets();
-    gameEnded = true;
-}
-function gameLost() {
-    gameEnded = true;
-    clearFriendlyBullets();
-    playerBar.remove();
-}
-
-function clearFriendlyBullets() {
-    for (var en of bullets) {
-        if (en.friendly)
-        en.fadeout();
-    }
-}
-function clearEnemies() {
-    for (var en of enemies) {
-        en.fadeout();
-    }
-}
-function clearEnemyBullets() {
-    for (var en of bullets) {
-        if (!en.friendly)
-        en.fadeout();
-    }
-}
 
 var PLAYER_HP = 5;
 class Player extends Item {
-    hp: number = PLAYER_HP;
+    hp: number = 1;//PLAYER_HP;
+    maxHp: number = 1;//PLAYER_HP;
     controllable: boolean = true;
     indestructible: boolean;
     indestructibilityTicks: number;

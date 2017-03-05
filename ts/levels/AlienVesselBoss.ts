@@ -1,4 +1,5 @@
-﻿function createAlienVesselBoss(): Enemy {
+﻿/// <reference path="../Pattern.ts" />
+function createAlienVesselBoss(): Enemy {
     var enemySprite = PIXI.Sprite.fromImage("img/boss/blackship.png");
     enemySprite.x = WIDTH / 2;
     enemySprite.y = HEIGHT * 1 / 5;
@@ -112,30 +113,30 @@ namespace AlienVessel {
     });
     export function alienVessel(): Pattern {
         return new RepeatPattern(() => [
-            zigleft(),
-            new FixedDuration(60).While(atPlayer),
+            zigleft().Named("Vessel assumes attack position."),
+            new FixedDuration(60).While(atPlayer).Named("Vessel commander chooses course of action."),
             new RandomPattern([
                 
                 new SequencePattern([
                     new SimpleMove(800, 0, 200).While(new PeriodicPattern(20, (boss) => {
                         fireFirer(boss);
-                    })),
+                    })).Named("Vessel ejecting auxiliary drones."),
                     new OneShot((boss) => { boss.tags["speed"] = getRandomExclusive(200, 700); }),
-                    new CustomPattern((boss) => new SimpleMove(0, boss.tags["speed"], 120 * boss.tags["speed"] / 700)).While(overload),
-                    new CustomPattern((boss) => new SimpleMove(0, -boss.tags["speed"], 120 * boss.tags["speed"] / 700)).While(overload),
-                    new SimpleMove(-400, 0, 60)
+                    new CustomPattern((boss) => new SimpleMove(0, boss.tags["speed"], 120 * boss.tags["speed"] / 700)).While(overload).Named("Vessel is overloading!!!"),
+                    new CustomPattern((boss) => new SimpleMove(0, -boss.tags["speed"], 120 * boss.tags["speed"] / 700)).While(overload).Named("Vessel is recovering from overload."),
+                    new SimpleMove(-400, 0, 60).Named("Vessel crew puts out fires.")
                 ]),
                 
                 
                 new SequencePattern([
-                    new SimpleMove(0, 600, 60).While(atPlayer),
+                    new SimpleMove(0, 600, 60).While(atPlayer).Named("Vessel is navigating the battle space."),
                     new RepeatPattern(() => [
-                        new SimpleMove(0, -100, 30).While(fireDown),
+                        new SimpleMove(0, -100, 30).While(fireDown).Named("Vessel is returning up."),
                         new OneShot(laser),
-                        new FixedDuration(10)
+                        new FixedDuration(10).Named("Vessel is discharging primary weapon.")
                     ], 6),
                     new OneShot(fireFirers),
-                    new SimpleMove(400, 0, 60)
+                    new SimpleMove(400, 0, 60).Named("Vessel crew is vacationing.")
                 ])
                 
                 ])

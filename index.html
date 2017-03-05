@@ -16,6 +16,8 @@
     <!-- Latest compiled and minified JavaScript -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
+    <script src="lib/bootstrap-confirmation.min.js"></script>
+
     <script src="lib/pixi.js"></script>
     <script src="generated/compiled-code.js"></script>
     <style>
@@ -50,7 +52,7 @@
 </head>
 <body>
     <div align="center">
-        <div id="viewport" style="padding-top: 10px; padding-bottom: 5px;">
+        <div id="viewport" style="padding-top: 10px; padding-bottom: 5px;" onclick="unpause();">
         </div>
         <div align="center">
             <span>Use <b>Z</b>, <b>Ctrl</b> or <b>A</b> keys to fire.</span>
@@ -68,44 +70,44 @@
                 <table style="border-spacing: 10px; border-collapse: separate">
                     <tr>
                         <td>
-                            <button class="btn btn-primary" onclick="openLevel(Levels.DeepEye);">
+                            <button id="lvl0" class="btn btn-primary" onclick="openLevel(Levels.DeepEye);">
                                 <img src="img/eye/eye0.png" width="64">
                                 <br>
                                 <b>DEEP EYE</b><br>Vanguard of the Vast Horrors
                             </button>
                         </td>
                         <td style="height:100px;"> 
-                                <button class="btn btn-primary btn-block" style="height: 100%; width: 100%;" onclick="openLevel(Levels.AlienVessel);">
+                                <button disabled id="lvl1" class="btn btn-primary btn-block" style="height: 100%; width: 100%;" onclick="openLevel(Levels.AlienVessel);">
                                     <img src="img/boss/blackship.png" width="64">
                                     <br>
                                     <b>ALIEN VESSEL</b><br>The Horrors have technology?!
                                 </button>
                         </td>
                         <td style="height:100px;">
-                            <button disabled  class="btn btn-primary btn-block" style="height: 100%; width: 100%;" onclick="openLevel(Levels.TentacleBoss);">
+                            <button id="lvl2" disabled  class="btn btn-primary btn-block" style="height: 100%; width: 100%;" onclick="openLevel(Levels.TentacleBoss);">
                                 <img src="img/boss/octopus.png" width="64">
                                 <br>
-                                <b>TENTACLE BOSS</b><br>It That Releases Terror
+                                <b>TENTACLE BOSS</b><br>I don't do hentai.
                             </button>
                         </td>
                     </tr>
                     <tr>
                         <td>
-                            <button disabled  class="btn btn-primary" onclick="openLevel(Levels.MysteriousPortal);">
+                            <button id="lvl3" disabled  class="btn btn-primary" onclick="openLevel(Levels.MysteriousPortal);">
                                 <img src="img/boss/stargate.png" width="64">
                                 <br>
                                 <b>MYSTERIOUS PORTAL</b><br>Gateway of Channeled Fear
                             </button>
                         </td>
                         <td style="height:100px; vertical-align: bottom;">
-                            <button disabled class="btn btn-primary btn-block" style="height: 100%; width: 100% ; " onclick="openLevel(Levels.CommandVessel);">
+                            <button id="lvl4" disabled class="btn btn-primary btn-block" style="height: 100%; width: 100% ; " onclick="openLevel(Levels.CommandVessel);">
                                 <img src="img/boss/redship.jpg" width="64">
                                 <br>
                                 <b>COMMAND VESSEL</b><br>Leaders of the Vast Horrors
                             </button>
                         </td>
                         <td style="height:100px;">
-                            <button disabled class="btn btn-primary btn-block" style="height: 100%; width: 100%;" onclick="openLevel(Levels.DeepEyes);">
+                            <button id="lvl5" disabled class="btn btn-primary btn-block" style="height: 100%; width: 100%;" onclick="openLevel(Levels.DeepEyes);">
                                 <img src="img/boss/doubleEye.png" width="64">
                                 <br>
                                 <b>DEEP EYES</b><br>Two of them
@@ -117,13 +119,13 @@
                 <br>
                 <div style="text-align: left; font-weight: normal;">
                     <button class="btn btn-primary" onclick="resume();">Resume</button>
-                    <button class="btn btn-default">Enable all stages</button>
+                    <button class="btn btn-default" onclick="enableAllStages();">Enable all stages</button>
                     <button class="btn btn-default" onclick="showControls();">View controls</button>
                     <button class="btn btn-default" onclick="showHowToPlay();">How to play</button>
                 </div>
                 <br>
                 <div style="text-align: left; font-weight: normal;">
-                    <input type="checkbox" id="skipConfirmation"><label class="mylabel "for="skipConfirmation">Skip confirmation dialog when entering a stage</label>
+                    <input type="checkbox" id="skipConfirmation" onchange="changeSkipConfirmation();"><label class="mylabel "for="skipConfirmation">Skip boss intro movements when entering a stage</label>
                     <br>
                     Difficulty: 
                     <select id="difficulty" onchange="changeDifficulty()">
@@ -164,7 +166,7 @@
                     <p>
                         Controls:
                         <ul>
-                            <li><b>Arrow keys</b> to move</li>
+                            <li><b>Arrow keys (up, down, left, right)</b> to move</li>
                             <li><b>Z</b>, <b>A</b> or <b>Ctrl</b> to fire</li>
                             <li><b>Space</b> to toggle autofire</li>
                             <li>Hold <b>Shift</b> to slow down time (only on <i>easy</i> and <i>easiest</i> difficulties)</li>
@@ -177,6 +179,7 @@
                             <li><b>F2</b> to toggle displaying hitboxes</li>
                             <li>Hold <b>F</b> to increase speed</li>
                         </ul>
+                        You may move both horizontally and vertically.
                     </p>
                     <button class="btn btn-default" onclick="$('#controls').hide()">
                         Close

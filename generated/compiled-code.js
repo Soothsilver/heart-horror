@@ -57,6 +57,199 @@ var buttons = {
     esc: keyboard(27),
     f: keyboard(70)
 };
+var enemies = [];
+var bullets = [];
+var hud = [];
+var player;
+var loadedLevel = -1;
+var doIntro;
+var pauseScreen = new PIXI.Container();
+function addBulletToStage(sprite) {
+    stage.addChildAt(sprite, stage.getChildIndex(separatorGraphics));
+}
+var separatorGraphics;
+function startLevel(level) {
+    loadedLevel = level;
+    doIntro = !skipIntro;
+    reset();
+}
+var INTRO_TIME = 240;
+var animatedEntities = [];
+function openLevelsUpTo(maxlevel) {
+    for (var i = 0; i < 6; i++) {
+        if (i > maxlevel + 1) {
+            continue;
+        }
+        $("#lvl" + i).prop("disabled", false);
+    }
+}
+function reloadAccessibleLevels() {
+    var n = parseInt(window.localStorage.getItem("level"));
+    if (isNaN(n)) {
+        openLevelsUpTo(-1);
+    }
+    else {
+        openLevelsUpTo(n);
+    }
+}
+var DIFFICULTY_EASIEST = 1;
+var DIFFICULTY_EASY = 2;
+var DIFFICULTY_NORMAL = 3;
+var DIFFICULTY_HARD = 4;
+var DIFFICULTY_FRUSTRATING = 5;
+function reloadDifficulty() {
+    difficulty = parseInt(window.localStorage.getItem("difficulty"));
+    console.log("D");
+    console.log(difficulty);
+    if (isNaN(difficulty)) {
+        difficulty = DIFFICULTY_NORMAL;
+        console.log(difficulty);
+    }
+    $("#difficulty").val(difficulty);
+}
+function saveLevelAsCompleted(level) {
+    var n = parseInt(window.localStorage.getItem("level"));
+    if (level > n || isNaN(n)) {
+        window.localStorage.setItem("level", level.toString());
+    }
+    reloadAccessibleLevels();
+}
+function bossDefeated() {
+    numberOfBossesRemaining--;
+    if (numberOfBossesRemaining <= 0) {
+        clearEnemies();
+        clearEnemyBullets();
+        gameEnded = true;
+        saveLevelAsCompleted(loadedLevel);
+        for (var _i = 0, enemies_1 = enemies; _i < enemies_1.length; _i++) {
+            var en = enemies_1[_i];
+            en.harmless = true;
+        }
+        showCongratulationsScreen();
+    }
+}
+function gameLost() {
+    gameEnded = true;
+    clearFriendlyBullets();
+    playerBar.remove();
+    showDefeatedScreen();
+}
+function clearFriendlyBullets() {
+    for (var _i = 0, bullets_1 = bullets; _i < bullets_1.length; _i++) {
+        var en = bullets_1[_i];
+        if (en.friendly)
+            en.fadeout();
+    }
+}
+function clearEnemies() {
+    for (var _i = 0, enemies_2 = enemies; _i < enemies_2.length; _i++) {
+        var en = enemies_2[_i];
+        if (!en.isBoss) {
+            en.fadeout();
+        }
+    }
+}
+function clearEnemyBullets() {
+    for (var _i = 0, bullets_2 = bullets; _i < bullets_2.length; _i++) {
+        var en = bullets_2[_i];
+        if (!en.friendly)
+            en.fadeout();
+    }
+}
+var dateOfStart;
+function reset() {
+    stage.removeChildren();
+    bullets = [];
+    enemies = [];
+    animatedEntities = [];
+    if (loadedLevel >= 0) {
+        player = new Player(doIntro);
+        spawnBosses(loadedLevel, doIntro);
+        gameEnded = false;
+        numberOfBossesRemaining = 1;
+        playerBar = new PlayerBar();
+        dateOfStart = new Date();
+        basicText = new PIXI.Text("FPS: ?");
+        basicText.x = 10;
+        basicText.y = 10;
+        stage.addChild(basicText);
+        applyDifficultySettings();
+        separatorGraphics = new PIXI.Graphics();
+        stage.addChild(separatorGraphics);
+        pauseScreen = new PIXI.Container();
+        pauseScreen.x = 0;
+        pauseScreen.y = 0;
+        var darkenEverything = new PIXI.Graphics();
+        darkenEverything.beginFill(0x000000, 0.6);
+        darkenEverything.lineStyle(0);
+        darkenEverything.drawRect(0, 0, WIDTH, HEIGHT);
+        darkenEverything.endFill();
+        pauseScreen.addChild(darkenEverything);
+        var pauseText = new PIXI.Text("PAUSED");
+        pauseText.style.fontSize = 36;
+        pauseText.style.fill = 0xFFFFFF;
+        pauseText.anchor.x = 0.5;
+        pauseText.anchor.y = 0.5;
+        pauseText.x = WIDTH / 2;
+        pauseText.y = HEIGHT / 2;
+        pauseScreen.addChild(pauseText);
+        var pauseText2 = new PIXI.Text("Click here or press any game key to continue.");
+        pauseText2.style.fontSize = 22;
+        pauseText2.style.fill = 0xFFFFFF;
+        pauseText2.anchor.x = 0.5;
+        pauseText2.anchor.y = 0.5;
+        pauseText2.x = WIDTH / 2;
+        pauseText2.y = HEIGHT / 2 + 35;
+        pauseScreen.addChild(pauseText2);
+    }
+}
+function spawnBosses(level, doIntro) {
+    var boss = Levels.getLevel(level).bossCreation();
+    if (doIntro) {
+        boss.sprite.y = -HEIGHT * 3 / 5;
+        boss.pattern = new SequencePattern([
+            new OneShot(function () {
+                var introbar = new PIXI.Container();
+                var bar = new PIXI.Sprite(PIXI.Texture.fromImage("img/introLine.png"));
+                bar.anchor.x = 0.5;
+                bar.anchor.y = 0.5;
+                bar.x = WIDTH / 2;
+                bar.y = HEIGHT / 2;
+                introbar.addChild(bar);
+                var pauseText = new PIXI.Text(Levels.getLevel(level).bossname);
+                pauseText.style.fontSize = 28;
+                pauseText.style.fill = 0x000000;
+                pauseText.anchor.x = 0.5;
+                pauseText.anchor.y = 0.5;
+                pauseText.x = WIDTH / 2;
+                pauseText.y = HEIGHT / 2 - 16;
+                introbar.addChild(pauseText);
+                var pauseText2 = new PIXI.Text(Levels.getLevel(level).subCaption);
+                pauseText2.style.fontSize = 24;
+                pauseText2.style.fill = 0x000000;
+                pauseText2.anchor.x = 0.5;
+                pauseText2.anchor.y = 0.5;
+                pauseText2.x = WIDTH / 2;
+                pauseText2.y = HEIGHT / 2 + 18;
+                introbar.addChild(pauseText2);
+                introbar.alpha = 0;
+                var b = new Bullet(false, introbar, new RectangleCollider(0, 0), new SequencePattern([
+                    new AppearingPattern(INTRO_TIME / 8),
+                    new FixedDuration(INTRO_TIME * 3 / 4),
+                    new DisappearingPattern(INTRO_TIME / 8)
+                ]));
+                b.harmless = true;
+                bullets.push(b);
+                stage.addChild(b.sprite);
+            }),
+            new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4),
+            new FixedDuration(INTRO_TIME * 1 / 4),
+            boss.pattern
+        ]);
+    }
+    stage.addChild(boss.sprite);
+    enemies = [boss];
+}
 var WIDTH = 1280;
 var HEIGHT = 720;
 var renderer = PIXI.autoDetectRenderer(WIDTH, HEIGHT, { backgroundColor: 0x1099bb });
@@ -67,6 +260,7 @@ ticker.start();
 renderer.render(stage);
 $(document).ready(function () {
     document.getElementById("viewport").appendChild(renderer.view);
+    loadLocalStorage();
     openMenu();
 });
 var playerBar;
@@ -108,7 +302,8 @@ buttons.f.release = function () {
 var difficulty = 3;
 ticker.add(function (delta) {
     if (basicText != null) {
-        basicText.text = "Difficulty: " + difficultyToString(difficulty) + "\nFPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + (enemies.length > 0 ? enemies[0].pattern.explain() : "");
+        basicText.text = "Difficulty: " + difficultyToString(difficulty) +
+            "\nBoss: " + (enemies.length > 0 ? enemies[0].pattern.explain() : "");
     }
     if (player != null) {
         if (player.controllable) {
@@ -158,6 +353,14 @@ ticker.add(function (delta) {
             bullets.splice(i, 1);
         }
     }
+    for (var i = hud.length - 1; i >= 0; i--) {
+        var inscription = hud[i];
+        inscription.update(delta);
+        if (inscription.isOutOfGame()) {
+            stage.removeChild(inscription.sprite);
+            hud.splice(i, 1);
+        }
+    }
     if (player != null) {
         player.update(delta);
         if (player.isOutOfGame()) {
@@ -168,8 +371,8 @@ ticker.add(function (delta) {
         }
         playerBar.update(player.hp);
     }
-    for (var _i = 0, enemies_1 = enemies; _i < enemies_1.length; _i++) {
-        var en = enemies_1[_i];
+    for (var _i = 0, enemies_3 = enemies; _i < enemies_3.length; _i++) {
+        var en = enemies_3[_i];
         if (en.bossbar != null) {
             en.bossbar.update(en.hp);
         }
@@ -248,7 +451,7 @@ var Item = (function () {
     };
     Item.prototype.fadeout = function () {
         this.harmless = true;
-        this.pattern = new Both([this.pattern, new DisappearingPattern(60)]);
+        this.pattern = new Both([this.pattern, new DisappearingPattern(30)]);
     };
     Item.prototype.isOutOfGame = function () {
         return this.sprite.x < -200 || this.sprite.y < -1000 || this.sprite.x > WIDTH + 200 || this.sprite.y > HEIGHT + 200 || this.gone;
@@ -267,8 +470,8 @@ var Bullet = (function (_super) {
         _super.prototype.update.call(this, delta);
         if (!this.harmless) {
             if (this.friendly) {
-                for (var _i = 0, enemies_2 = enemies; _i < enemies_2.length; _i++) {
-                    var enemy = enemies_2[_i];
+                for (var _i = 0, enemies_4 = enemies; _i < enemies_4.length; _i++) {
+                    var enemy = enemies_4[_i];
                     if (enemy.collider.intersects(this.collider)) {
                         enemy.loseHP(this.damage);
                         if (!this.indestructible) {
@@ -639,6 +842,16 @@ function fastReset() {
     doIntro = false;
     reset();
 }
+function changeSkipConfirmation() {
+    var skip = $('#skipConfirmation').is(":checked");
+    window.localStorage.setItem("skipConfirmation", skip ? "yes" : "no");
+    skipIntro = skip;
+}
+function reloadSkipConfirmation() {
+    var shouldSkip = window.localStorage.getItem("skipConfirmation") == "yes";
+    $("#skipConfirmation").prop('checked', shouldSkip);
+    skipIntro = shouldSkip;
+}
 function pause() {
     if (!paused) {
         paused = true;
@@ -693,10 +906,14 @@ var Enemy = (function (_super) {
         return _super.call(this, sprite, collider, pattern) || this;
     }
     Enemy.prototype.loseHP = function (lost) {
+        if (this.immortal) {
+            return;
+        }
         this.hp -= lost;
         if (this.hp <= 0) {
-            this.gone = true;
-            gameWon();
+            this.immortal = true;
+            this.pattern = new CombinationPattern([this.pattern, new DisappearingPattern(30)]);
+            bossDefeated();
         }
     };
     Enemy.prototype.update = function (delta) {
@@ -707,112 +924,34 @@ var Enemy = (function (_super) {
     };
     return Enemy;
 }(Item));
-var enemies = [];
-var bullets = [];
-var player;
-var loadedLevel;
-var doIntro;
-var pauseScreen = new PIXI.Container();
-function addBulletToStage(sprite) {
-    stage.addChildAt(sprite, stage.getChildIndex(separatorGraphics));
-}
-var separatorGraphics;
-function startLevel(level) {
-    loadedLevel = level;
-    doIntro = !skipIntro;
-    reset();
-}
-var INTRO_TIME = 240;
-var animatedEntities;
-function reset() {
-    stage.removeChildren();
-    bullets = [];
-    enemies = [];
-    animatedEntities = [];
-    player = new Player(doIntro);
-    spawnBosses(loadedLevel, doIntro);
-    gameEnded = false;
-    playerBar = new PlayerBar();
-    basicText = new PIXI.Text("FPS: ?");
-    basicText.x = 10;
-    basicText.y = 10;
-    stage.addChild(basicText);
-    applyDifficultySettings();
-    separatorGraphics = new PIXI.Graphics();
-    stage.addChild(separatorGraphics);
-    pauseScreen = new PIXI.Container();
-    pauseScreen.x = 0;
-    pauseScreen.y = 0;
-    var darkenEverything = new PIXI.Graphics();
-    darkenEverything.beginFill(0x000000, 0.6);
-    darkenEverything.lineStyle(0);
-    darkenEverything.drawRect(0, 0, WIDTH, HEIGHT);
-    darkenEverything.endFill();
-    pauseScreen.addChild(darkenEverything);
-    var pauseText = new PIXI.Text("PAUSED");
-    pauseText.style.fontSize = 36;
-    pauseText.style.fill = 0xFFFFFF;
-    pauseText.anchor.x = 0.5;
-    pauseText.anchor.y = 0.5;
-    pauseText.x = WIDTH / 2;
-    pauseText.y = HEIGHT / 2;
-    pauseScreen.addChild(pauseText);
-    var pauseText2 = new PIXI.Text("Press any game key to continue.");
-    pauseText2.style.fontSize = 22;
-    pauseText2.style.fill = 0xFFFFFF;
-    pauseText2.anchor.x = 0.5;
-    pauseText2.anchor.y = 0.5;
-    pauseText2.x = WIDTH / 2;
-    pauseText2.y = HEIGHT / 2 + 35;
-    pauseScreen.addChild(pauseText2);
-}
-function spawnBosses(level, doIntro) {
-    var boss = Levels.getLevel(level).bossCreation();
-    if (doIntro) {
-        boss.sprite.y = -HEIGHT * 3 / 5;
-        boss.pattern = new SequencePattern([
-            new OneShot(function () {
-                var introbar = new PIXI.Container();
-                var bar = new PIXI.Sprite(PIXI.Texture.fromImage("img/introLine.png"));
-                bar.anchor.x = 0.5;
-                bar.anchor.y = 0.5;
-                bar.x = WIDTH / 2;
-                bar.y = HEIGHT / 2;
-                introbar.addChild(bar);
-                var pauseText = new PIXI.Text(Levels.getLevel(level).bossname);
-                pauseText.style.fontSize = 28;
-                pauseText.style.fill = 0x000000;
-                pauseText.anchor.x = 0.5;
-                pauseText.anchor.y = 0.5;
-                pauseText.x = WIDTH / 2;
-                pauseText.y = HEIGHT / 2 - 16;
-                introbar.addChild(pauseText);
-                var pauseText2 = new PIXI.Text(Levels.getLevel(level).subCaption);
-                pauseText2.style.fontSize = 24;
-                pauseText2.style.fill = 0x000000;
-                pauseText2.anchor.x = 0.5;
-                pauseText2.anchor.y = 0.5;
-                pauseText2.x = WIDTH / 2;
-                pauseText2.y = HEIGHT / 2 + 18;
-                introbar.addChild(pauseText2);
-                introbar.alpha = 0;
-                var b = new Bullet(false, introbar, new RectangleCollider(0, 0), new SequencePattern([
-                    new AppearingPattern(INTRO_TIME / 8),
-                    new FixedDuration(INTRO_TIME * 3 / 4),
-                    new DisappearingPattern(INTRO_TIME / 8)
-                ]));
-                b.harmless = true;
-                bullets.push(b);
-                stage.addChild(b.sprite);
-            }),
-            new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4),
-            new FixedDuration(INTRO_TIME * 1 / 4),
-            boss.pattern
-        ]);
+var LevelDescription = (function () {
+    function LevelDescription(name, desc, makeBoss) {
+        this.bossname = name;
+        this.subCaption = desc;
+        this.bossCreation = makeBoss;
     }
-    stage.addChild(boss.sprite);
-    enemies = [boss];
-}
+    return LevelDescription;
+}());
+var Levels = (function () {
+    function Levels() {
+    }
+    Levels.getLevel = function (level) {
+        switch (level) {
+            case Levels.AlienVessel:
+                return new LevelDescription("Alien Vessel", "Is this boss random?!", createAlienVesselBoss);
+            case Levels.DeepEye:
+            default:
+                return new LevelDescription("Deep Eye", "Vanguard of the Vast Horrors", createEyeBossBoss);
+        }
+    };
+    return Levels;
+}());
+Levels.DeepEye = 1;
+Levels.AlienVessel = 2;
+Levels.TentacleBoss = 3;
+Levels.MysteriousPortal = 4;
+Levels.CommandVessel = 5;
+Levels.DeepeEyes = 6;
 var Pattern = (function () {
     function Pattern() {
         this.tags = {};
@@ -828,8 +967,14 @@ var Pattern = (function () {
     Pattern.prototype.Then = function (then) {
         return new SequencePattern([this, then]);
     };
+    Pattern.prototype.And = function (and) {
+        return new Both([this, and]);
+    };
+    Pattern.prototype.Named = function (name) {
+        return new NamedPattern(this, name);
+    };
     Pattern.prototype.explain = function () {
-        return "";
+        return "?";
     };
     return Pattern;
 }());
@@ -855,6 +1000,51 @@ var OneShot = (function (_super) {
     };
     return OneShot;
 }(Pattern));
+var SpecialPattern = (function (_super) {
+    __extends(SpecialPattern, _super);
+    function SpecialPattern(func) {
+        var _this = _super.call(this) || this;
+        _this.func = func;
+        return _this;
+    }
+    SpecialPattern.prototype.update = function (delta, item) {
+        this.func(delta, item, this);
+    };
+    SpecialPattern.prototype.explain = function () {
+        return "special";
+    };
+    return SpecialPattern;
+}(Pattern));
+var DelegatingPattern = (function (_super) {
+    __extends(DelegatingPattern, _super);
+    function DelegatingPattern(pattern) {
+        var _this = _super.call(this) || this;
+        _this.inner = pattern;
+        return _this;
+    }
+    DelegatingPattern.prototype.update = function (delta, item) {
+        this.inner.update(delta, item);
+        if (this.inner.spent) {
+            this.spent = true;
+        }
+    };
+    DelegatingPattern.prototype.explain = function () {
+        return this.inner.explain();
+    };
+    return DelegatingPattern;
+}(Pattern));
+var NamedPattern = (function (_super) {
+    __extends(NamedPattern, _super);
+    function NamedPattern(pattern, name) {
+        var _this = _super.call(this, pattern) || this;
+        _this.name = name;
+        return _this;
+    }
+    NamedPattern.prototype.explain = function () {
+        return this.name;
+    };
+    return NamedPattern;
+}(DelegatingPattern));
 var DisappearingPattern = (function (_super) {
     __extends(DisappearingPattern, _super);
     function DisappearingPattern(time) {
@@ -1123,325 +1313,6 @@ var UniformMovementPattern = (function (_super) {
     };
     return UniformMovementPattern;
 }(Pattern));
-var SPEED = 7;
-var temporaryGraphics;
-function spawnBullet(bullet) {
-    bullets.push(bullet);
-    addBulletToStage(bullet.sprite);
-}
-var BULLET_SPEED = 10;
-var gameEnded;
-function gameWon() {
-    clearEnemies();
-    clearEnemyBullets();
-    gameEnded = true;
-}
-function gameLost() {
-    gameEnded = true;
-    clearFriendlyBullets();
-    playerBar.remove();
-}
-function clearFriendlyBullets() {
-    for (var _i = 0, bullets_1 = bullets; _i < bullets_1.length; _i++) {
-        var en = bullets_1[_i];
-        if (en.friendly)
-            en.fadeout();
-    }
-}
-function clearEnemies() {
-    for (var _i = 0, enemies_3 = enemies; _i < enemies_3.length; _i++) {
-        var en = enemies_3[_i];
-        en.fadeout();
-    }
-}
-function clearEnemyBullets() {
-    for (var _i = 0, bullets_2 = bullets; _i < bullets_2.length; _i++) {
-        var en = bullets_2[_i];
-        if (!en.friendly)
-            en.fadeout();
-    }
-}
-var PLAYER_HP = 5;
-var Player = (function (_super) {
-    __extends(Player, _super);
-    function Player(doIntro) {
-        var _this = _super.call(this, null, new CircleCollider(4), new StandingPattern()) || this;
-        _this.hp = PLAYER_HP;
-        _this.controllable = true;
-        _this.fireDelay = 0;
-        var texture = PIXI.Texture.fromImage('img/ship.png');
-        var playerSprite = new PIXI.Sprite(texture);
-        playerSprite.anchor.x = 0.5;
-        stage.addChild(playerSprite);
-        playerSprite.anchor.y = 0.65;
-        playerSprite.x = WIDTH / 2;
-        if (doIntro) {
-            playerSprite.y = HEIGHT * 5 / 4;
-            _this.controllable = false;
-            _this.pattern = new SimpleMove(0, -HEIGHT * 2 / 4, INTRO_TIME).Then(new OneShot(function (self) { return _this.controllable = true; }));
-        }
-        else {
-            playerSprite.y = HEIGHT * 3 / 4;
-        }
-        playerSprite.width = 64;
-        playerSprite.height = 64;
-        _this.sprite = playerSprite;
-        return _this;
-    }
-    Player.prototype.loseHP = function (damage) {
-        this.hp -= damage;
-        this.indestructible = true;
-        this.indestructibilityTicks = 120;
-        this.sprite.alpha = 0.3;
-        if (this.hp <= 0) {
-            this.gone = true;
-            gameLost();
-        }
-    };
-    Player.prototype.attemptFire = function () {
-        if (this.fireDelay > 5) {
-            for (var i = 0; i < 2; i++) {
-                var bulletSprite = new PIXI.Sprite(PIXI.Texture.fromImage('img/playerBullet.png'));
-                bulletSprite.x = player.sprite.x + (i == 0 ? -30 : 30);
-                bulletSprite.y = player.sprite.y;
-                bulletSprite.anchor.x = 0.5;
-                bulletSprite.anchor.y = 0.5;
-                spawnBullet(new Bullet(true, bulletSprite, new RectangleCollider(bulletSprite.width, bulletSprite.height), new UniformMovementPattern(0, -BULLET_SPEED)));
-            }
-            this.fireDelay = 0;
-        }
-    };
-    Player.prototype.bindSpriteInScreen = function () {
-        if (this.sprite.x < 0)
-            this.sprite.x = 0;
-        if (this.sprite.y < 0)
-            this.sprite.y = 0;
-        if (this.sprite.x > WIDTH)
-            this.sprite.x = WIDTH;
-        if (this.sprite.y > HEIGHT)
-            this.sprite.y = HEIGHT;
-    };
-    Player.prototype.update = function (delta) {
-        _super.prototype.update.call(this, delta);
-        this.fireDelay += delta;
-        if (this.indestructible) {
-            this.indestructibilityTicks -= delta;
-            if (this.indestructibilityTicks < 0) {
-                this.indestructible = false;
-                this.sprite.alpha = 1;
-            }
-        }
-    };
-    return Player;
-}(Item));
-var PlayerBar = (function (_super) {
-    __extends(PlayerBar, _super);
-    function PlayerBar() {
-        return _super.call(this, "Player", Colors.LightGreen, PLAYER_HP, 10) || this;
-    }
-    return PlayerBar;
-}(LifeBar));
-var autofire;
-var paused = false;
-var DIFFICULTY_EASIEST = 1;
-var DIFFICULTY_EASY = 2;
-var DIFFICULTY_NORMAL = 3;
-var DIFFICULTY_HARD = 4;
-var DIFFICULTY_FRUSTRATING = 5;
-var skipIntro = false;
-var pauseWhenClickOut = true;
-function changeDifficulty() {
-    difficulty = parseInt($("#difficulty").val());
-    stage.removeChildren();
-}
-function difficultyToString(difficulty) {
-    switch (difficulty) {
-        case DIFFICULTY_EASIEST: return "EASIEST";
-        case DIFFICULTY_EASY: return "EASY";
-        case DIFFICULTY_NORMAL: return "NORMAL";
-        case DIFFICULTY_HARD: return "HARD";
-        case DIFFICULTY_FRUSTRATING: return "FRUSTRATING";
-    }
-}
-function applyDifficultySettings() {
-    switch (difficulty) {
-        case DIFFICULTY_EASIEST:
-            player.hp = 12;
-            for (var _i = 0, enemies_4 = enemies; _i < enemies_4.length; _i++) {
-                var en = enemies_4[_i];
-                en.hp = 4 / 5 * en.hp;
-            }
-            break;
-        case DIFFICULTY_EASY:
-            player.hp = 8;
-            break;
-        case DIFFICULTY_NORMAL:
-            player.hp = 5;
-            break;
-        case DIFFICULTY_HARD:
-            player.hp = 3;
-            for (var _a = 0, enemies_5 = enemies; _a < enemies_5.length; _a++) {
-                var en = enemies_5[_a];
-                en.hp = 6 / 5 * en.hp;
-                en.bossbar.maxHP = en.hp;
-            }
-            break;
-        case DIFFICULTY_FRUSTRATING:
-            player.hp = 2;
-            for (var _b = 0, enemies_6 = enemies; _b < enemies_6.length; _b++) {
-                var en = enemies_6[_b];
-                en.hp = 7 / 5 * en.hp;
-                en.bossbar.maxHP = en.hp;
-            }
-            break;
-    }
-    playerBar.maxHP = player.hp;
-}
-var LevelDescription = (function () {
-    function LevelDescription(name, desc, makeBoss) {
-        this.bossname = name;
-        this.subCaption = desc;
-        this.bossCreation = makeBoss;
-    }
-    return LevelDescription;
-}());
-var Levels = (function () {
-    function Levels() {
-    }
-    Levels.getLevel = function (level) {
-        switch (level) {
-            case Levels.AlienVessel:
-                return new LevelDescription("Alien Vessel", "Is this boss random?!", createAlienVesselBoss);
-            case Levels.DeepEye:
-            default:
-                return new LevelDescription("Deep Eye", "Vanguard of the Vast Horrors", createEyeBossBoss);
-        }
-    };
-    return Levels;
-}());
-Levels.DeepEye = 1;
-Levels.AlienVessel = 2;
-Levels.TentacleBoss = 3;
-Levels.MysteriousPortal = 4;
-Levels.CommandVessel = 5;
-Levels.DeepeEyes = 6;
-function createEyeBossBoss() {
-    var frammes = [];
-    for (var i = 0; i < 8; i++) {
-        frammes.push(PIXI.Texture.fromImage('img/eye/eye' + i + '.png'));
-    }
-    var enemySprite = new PIXI.extras.AnimatedSprite(frammes);
-    enemySprite.x = WIDTH / 2;
-    enemySprite.y = HEIGHT * 1 / 5;
-    enemySprite.anchor.x = 0.5;
-    enemySprite.anchor.y = 0.5;
-    enemySprite.animationSpeed = 0.2;
-    enemySprite.play();
-    animatedEntities.push(enemySprite);
-    var boss = new Enemy(enemySprite, new CircleCollider(143), createEyeBoss());
-    boss.hp = 800;
-    boss.isBoss = true;
-    boss.bossbar = new BossBar(boss.hp);
-    return boss;
-}
-function createEyeBoss() {
-    var bossMovement = new SequencePattern([
-        new RepeatPattern(function () { return [
-            new RepeatPattern(function () {
-                return [
-                    new FixedDuration(120).While(shooting).While(rotating),
-                    new SimpleMove(-400, 0, 100).While(atPlayer),
-                    new FixedDuration(30).While(shooting2),
-                    new SimpleMove(800, 0, 200).While(atPlayer),
-                    new FixedDuration(30).While(shooting2),
-                    new SimpleMove(-400, 0, 100).While(atPlayer),
-                ];
-            }, 1),
-            new RandomPattern([
-                new SequencePattern([
-                    new SimpleMove(0, 200, 50),
-                    new OneShot(fireBombs),
-                    new SimpleMove(0, -200, 50),
-                ]),
-                new SequencePattern([
-                    new SimpleMove(500, 200, 100),
-                    new OneShot(function (boss) {
-                        var laserSprite = createBulletSprite(boss.x(), boss.y() + 300, "blueLaser.png");
-                        laserSprite.scale.y = 7;
-                        var bb = new Bullet(false, laserSprite, new RectangleCollider(laserSprite.width, laserSprite.height), new FollowLeaderX(boss).While(new FixedDuration(500)).Then(new OneShot(function (laser) { return laser.gone = true; })));
-                        bb.indestructible = true;
-                        spawnBullet(bb);
-                    }),
-                    new SimpleMove(-1000, 0, 500).While(atPlayer),
-                    new SimpleMove(500, -200, 100),
-                ])
-            ])
-        ]; })
-    ]);
-    function fireBombs(boss) {
-        for (var i = 0; i < 5; i++) {
-            var bomb = createBulletSprite(boss.x(), boss.y(), "bomb.png");
-            var SPEED = 8;
-            var rotation = Math.PI * i / 4;
-            var xs = SPEED * 0.5 * Math.cos(rotation);
-            var ys = SPEED * 0.5 * Math.sin(rotation);
-            var bombPattern = new SequencePattern([
-                new UniformMovementPattern(xs, ys).While(new FixedDuration(120)),
-                new OneShot(function (bomb) {
-                    bomb.gone = true;
-                    for (var i = 0; i < 10; i++) {
-                        var rotation = 2 * Math.PI * i / 10;
-                        var xs = SPEED * 0.7 * 0.5 * Math.cos(rotation);
-                        var ys = SPEED * 0.7 * 0.5 * Math.sin(rotation);
-                        var smll = createBulletSprite(bomb.x(), bomb.y(), "yellowBubble.png");
-                        var bs = new Bullet(false, smll, new CircleCollider(5), new SequencePattern([
-                            new UniformMovementPattern(xs, ys).While(new FixedDuration(60)),
-                            new UniformMovementPattern(xs, ys).While(new DisappearingPattern(10))
-                        ]));
-                        spawnBullet(bs);
-                    }
-                })
-            ]);
-            var b = new Bullet(false, bomb, new CircleCollider(16), bombPattern);
-            spawnBullet(b);
-        }
-    }
-    var rotating = new RotationPattern(24, function (angle, delta, item) {
-        item.tags["rot"] = angle;
-    });
-    var atPlayer = new PeriodicPattern(16, function (boss) {
-        var BULLET_SPEED = 10;
-        var dx = (player.x() - boss.x());
-        var dy = (player.y() - boss.y());
-        var total = Math.sqrt(dx * dx + dy * dy);
-        var xs = BULLET_SPEED * dx / total;
-        var ys = BULLET_SPEED * dy / total;
-        console.log('a');
-        var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b);
-    });
-    var shooting2 = new PeriodicPattern(18, function (item) {
-        for (var i = 0; i < 10; i++) {
-            var bs = createBulletSprite(item.sprite.x, item.sprite.y, "blueOrb.png");
-            var SPEED = 5;
-            var rotation = Math.PI * i / 10;
-            var xs = SPEED * 0.5 * Math.cos(rotation);
-            var ys = SPEED * 0.5 * Math.sin(rotation);
-            var b = new Bullet(false, bs, new CircleCollider(9), new UniformMovementPattern(xs, ys));
-            spawnBullet(b);
-        }
-    });
-    var shooting = new PeriodicPattern(1, function (item, pattern) {
-        var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
-        var SPEED = 5;
-        var xs = SPEED * Math.cos(item.tags["rot"] + pattern.getTag("slowdown"));
-        var ys = SPEED * Math.sin(item.tags["rot"] + pattern.getTag("slowdown"));
-        pattern.tags["slowdown"] = pattern.getTag("slowdown") + 0.02;
-        var b = new Bullet(false, bs, new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b);
-    });
-    return bossMovement;
-}
 function createAlienVesselBoss() {
     var enemySprite = PIXI.Sprite.fromImage("img/boss/blackship.png");
     enemySprite.x = WIDTH / 2;
@@ -1553,31 +1424,462 @@ var AlienVessel;
     });
     function alienVessel() {
         return new RepeatPattern(function () { return [
-            zigleft(),
-            new FixedDuration(60).While(atPlayer),
+            zigleft().Named("Vessel assumes attack position."),
+            new FixedDuration(60).While(atPlayer).Named("Vessel commander chooses course of action."),
             new RandomPattern([
                 new SequencePattern([
                     new SimpleMove(800, 0, 200).While(new PeriodicPattern(20, function (boss) {
                         fireFirer(boss);
-                    })),
+                    })).Named("Vessel ejecting auxiliary drones."),
                     new OneShot(function (boss) { boss.tags["speed"] = getRandomExclusive(200, 700); }),
-                    new CustomPattern(function (boss) { return new SimpleMove(0, boss.tags["speed"], 120 * boss.tags["speed"] / 700); }).While(overload),
-                    new CustomPattern(function (boss) { return new SimpleMove(0, -boss.tags["speed"], 120 * boss.tags["speed"] / 700); }).While(overload),
-                    new SimpleMove(-400, 0, 60)
+                    new CustomPattern(function (boss) { return new SimpleMove(0, boss.tags["speed"], 120 * boss.tags["speed"] / 700); }).While(overload).Named("Vessel is overloading!!!"),
+                    new CustomPattern(function (boss) { return new SimpleMove(0, -boss.tags["speed"], 120 * boss.tags["speed"] / 700); }).While(overload).Named("Vessel is recovering from overload."),
+                    new SimpleMove(-400, 0, 60).Named("Vessel crew puts out fires.")
                 ]),
                 new SequencePattern([
-                    new SimpleMove(0, 600, 60).While(atPlayer),
+                    new SimpleMove(0, 600, 60).While(atPlayer).Named("Vessel is navigating the battle space."),
                     new RepeatPattern(function () { return [
-                        new SimpleMove(0, -100, 30).While(fireDown),
+                        new SimpleMove(0, -100, 30).While(fireDown).Named("Vessel is returning up."),
                         new OneShot(laser),
-                        new FixedDuration(10)
+                        new FixedDuration(10).Named("Vessel is discharging primary weapon.")
                     ]; }, 6),
                     new OneShot(fireFirers),
-                    new SimpleMove(400, 0, 60)
+                    new SimpleMove(400, 0, 60).Named("Vessel crew is vacationing.")
                 ])
             ])
         ]; });
     }
     AlienVessel.alienVessel = alienVessel;
 })(AlienVessel || (AlienVessel = {}));
+function createEyeBossBoss() {
+    var frammes = [];
+    for (var i = 0; i < 8; i++) {
+        frammes.push(PIXI.Texture.fromImage('img/eye/eye' + i + '.png'));
+    }
+    var enemySprite = new PIXI.extras.AnimatedSprite(frammes);
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    enemySprite.animationSpeed = 0.2;
+    enemySprite.play();
+    animatedEntities.push(enemySprite);
+    var boss = new Enemy(enemySprite, new CircleCollider(143), createEyeBoss());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+function createEyeBoss() {
+    var bossMovement = new SequencePattern([
+        new RepeatPattern(function () { return [
+            new RepeatPattern(function () {
+                return [
+                    new FixedDuration(120).While(shooting).While(rotating).Named("Full Rotation Eye Cannon"),
+                    new SimpleMove(-400, 0, 100).While(atPlayer).Named("Sweep Left"),
+                    new FixedDuration(30).While(shooting2).Named("Discharge"),
+                    new SimpleMove(800, 0, 200).While(atPlayer).Named("Sweep Right"),
+                    new FixedDuration(30).While(shooting2).Named("Discharge"),
+                    new SimpleMove(-400, 0, 100).While(atPlayer).Named("Sweep Left"),
+                ];
+            }, 1),
+            new RandomPattern([
+                new SequencePattern([
+                    new SimpleMove(0, 200, 50).Named("Prime Explosive Eyes"),
+                    new OneShot(fireBombs),
+                    new SimpleMove(0, -200, 50).Named("Explosive Eyes"),
+                ]),
+                new SequencePattern([
+                    new SimpleMove(500, 200, 100).Named("Prime Laser"),
+                    new OneShot(function (boss) {
+                        var laserSprite = createBulletSprite(boss.x(), boss.y() + 300, "blueLaser.png");
+                        laserSprite.scale.y = 7;
+                        var bb = new Bullet(false, laserSprite, new RectangleCollider(laserSprite.width, laserSprite.height), new FollowLeaderX(boss).While(new FixedDuration(500)).Then(new OneShot(function (laser) { return laser.gone = true; })));
+                        bb.indestructible = true;
+                        spawnBullet(bb);
+                    }),
+                    new SimpleMove(-1000, 0, 500).While(atPlayer).Named("Laser Sweep"),
+                    new SimpleMove(500, -200, 100).Named("Recover Self"),
+                ])
+            ])
+        ]; })
+    ]);
+    function fireBombs(boss) {
+        for (var i = 0; i < 5; i++) {
+            var bomb = createBulletSprite(boss.x(), boss.y(), "bomb.png");
+            var SPEED = 8;
+            var rotation = Math.PI * i / 4;
+            var xs = SPEED * 0.5 * Math.cos(rotation);
+            var ys = SPEED * 0.5 * Math.sin(rotation);
+            var bombPattern = new SequencePattern([
+                new UniformMovementPattern(xs, ys).While(new FixedDuration(120)),
+                new OneShot(function (bomb) {
+                    bomb.gone = true;
+                    for (var i = 0; i < 10; i++) {
+                        var rotation = 2 * Math.PI * i / 10;
+                        var xs = SPEED * 0.7 * 0.5 * Math.cos(rotation);
+                        var ys = SPEED * 0.7 * 0.5 * Math.sin(rotation);
+                        var smll = createBulletSprite(bomb.x(), bomb.y(), "yellowBubble.png");
+                        var bs = new Bullet(false, smll, new CircleCollider(5), new SequencePattern([
+                            new UniformMovementPattern(xs, ys).While(new FixedDuration(60)),
+                            new UniformMovementPattern(xs, ys).While(new DisappearingPattern(10))
+                        ]));
+                        spawnBullet(bs);
+                    }
+                })
+            ]);
+            var b = new Bullet(false, bomb, new CircleCollider(16), bombPattern);
+            spawnBullet(b);
+        }
+    }
+    var rotating = new RotationPattern(24, function (angle, delta, item) {
+        item.tags["rot"] = angle;
+    });
+    var atPlayer = new PeriodicPattern(16, function (boss) {
+        var BULLET_SPEED = 10;
+        var dx = (player.x() - boss.x());
+        var dy = (player.y() - boss.y());
+        var total = Math.sqrt(dx * dx + dy * dy);
+        var xs = BULLET_SPEED * dx / total;
+        var ys = BULLET_SPEED * dy / total;
+        console.log('a');
+        var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
+        spawnBullet(b);
+    });
+    var shooting2 = new PeriodicPattern(18, function (item) {
+        for (var i = 0; i < 10; i++) {
+            var bs = createBulletSprite(item.sprite.x, item.sprite.y, "blueOrb.png");
+            var SPEED = 5;
+            var rotation = Math.PI * i / 10;
+            var xs = SPEED * 0.5 * Math.cos(rotation);
+            var ys = SPEED * 0.5 * Math.sin(rotation);
+            var b = new Bullet(false, bs, new CircleCollider(9), new UniformMovementPattern(xs, ys));
+            spawnBullet(b);
+        }
+    });
+    var shooting = new PeriodicPattern(1, function (item, pattern) {
+        var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
+        var SPEED = 5;
+        var xs = SPEED * Math.cos(item.tags["rot"] + pattern.getTag("slowdown"));
+        var ys = SPEED * Math.sin(item.tags["rot"] + pattern.getTag("slowdown"));
+        pattern.tags["slowdown"] = pattern.getTag("slowdown") + 0.02;
+        var b = new Bullet(false, bs, new CircleCollider(5), new UniformMovementPattern(xs, ys));
+        spawnBullet(b);
+    });
+    return bossMovement;
+}
+var SPEED = 7;
+var temporaryGraphics;
+function spawnBullet(bullet) {
+    if (gameEnded) {
+        bullet.harmless = true;
+        bullet.pattern = new CombinationPattern([bullet.pattern, new DisappearingPattern(60)]);
+    }
+    bullets.push(bullet);
+    addBulletToStage(bullet.sprite);
+}
+var BULLET_SPEED = 10;
+var gameEnded;
+var numberOfBossesRemaining = 1;
+var PLAYER_HP = 5;
+var Player = (function (_super) {
+    __extends(Player, _super);
+    function Player(doIntro) {
+        var _this = _super.call(this, null, new CircleCollider(4), new StandingPattern()) || this;
+        _this.hp = 1;
+        _this.maxHp = 1;
+        _this.controllable = true;
+        _this.fireDelay = 0;
+        var texture = PIXI.Texture.fromImage('img/ship.png');
+        var playerSprite = new PIXI.Sprite(texture);
+        playerSprite.anchor.x = 0.5;
+        stage.addChild(playerSprite);
+        playerSprite.anchor.y = 0.65;
+        playerSprite.x = WIDTH / 2;
+        if (doIntro) {
+            playerSprite.y = HEIGHT * 5 / 4;
+            _this.controllable = false;
+            _this.pattern = new SimpleMove(0, -HEIGHT * 2 / 4, INTRO_TIME).Then(new OneShot(function (self) { return _this.controllable = true; }));
+        }
+        else {
+            playerSprite.y = HEIGHT * 3 / 4;
+        }
+        playerSprite.width = 64;
+        playerSprite.height = 64;
+        _this.sprite = playerSprite;
+        return _this;
+    }
+    Player.prototype.loseHP = function (damage) {
+        this.hp -= damage;
+        this.indestructible = true;
+        this.indestructibilityTicks = 120;
+        this.sprite.alpha = 0.3;
+        if (this.hp <= 0) {
+            this.gone = true;
+            gameLost();
+        }
+    };
+    Player.prototype.attemptFire = function () {
+        if (this.fireDelay > 5) {
+            for (var i = 0; i < 2; i++) {
+                var bulletSprite = new PIXI.Sprite(PIXI.Texture.fromImage('img/playerBullet.png'));
+                bulletSprite.x = player.sprite.x + (i == 0 ? -30 : 30);
+                bulletSprite.y = player.sprite.y;
+                bulletSprite.anchor.x = 0.5;
+                bulletSprite.anchor.y = 0.5;
+                spawnBullet(new Bullet(true, bulletSprite, new RectangleCollider(bulletSprite.width, bulletSprite.height), new UniformMovementPattern(0, -BULLET_SPEED)));
+            }
+            this.fireDelay = 0;
+        }
+    };
+    Player.prototype.bindSpriteInScreen = function () {
+        if (this.sprite.x < 0)
+            this.sprite.x = 0;
+        if (this.sprite.y < 0)
+            this.sprite.y = 0;
+        if (this.sprite.x > WIDTH)
+            this.sprite.x = WIDTH;
+        if (this.sprite.y > HEIGHT)
+            this.sprite.y = HEIGHT;
+    };
+    Player.prototype.update = function (delta) {
+        _super.prototype.update.call(this, delta);
+        this.fireDelay += delta;
+        if (this.indestructible) {
+            this.indestructibilityTicks -= delta;
+            if (this.indestructibilityTicks < 0) {
+                this.indestructible = false;
+                this.sprite.alpha = 1;
+            }
+        }
+    };
+    return Player;
+}(Item));
+var PlayerBar = (function (_super) {
+    __extends(PlayerBar, _super);
+    function PlayerBar() {
+        return _super.call(this, "Player", Colors.LightGreen, PLAYER_HP, 10) || this;
+    }
+    return PlayerBar;
+}(LifeBar));
+var autofire;
+var paused = false;
+var DIFFICULTY_EASIEST = 1;
+var DIFFICULTY_EASY = 2;
+var DIFFICULTY_NORMAL = 3;
+var DIFFICULTY_HARD = 4;
+var DIFFICULTY_FRUSTRATING = 5;
+var skipIntro = false;
+var pauseWhenClickOut = true;
+function changeDifficulty() {
+    difficulty = parseInt($("#difficulty").val());
+    stage.removeChildren();
+    window.localStorage.setItem("difficulty", difficulty.toString());
+}
+function loadLocalStorage() {
+    reloadAccessibleLevels();
+    reloadDifficulty();
+    reloadSkipConfirmation();
+}
+function enableAllStages() {
+    if (confirm("Enable all stages that you haven't reached yet?")) {
+        saveLevelAsCompleted(10);
+    }
+}
+function difficultyToString(difficulty) {
+    switch (difficulty) {
+        case DIFFICULTY_EASIEST: return "EASIEST";
+        case DIFFICULTY_EASY: return "EASY";
+        case DIFFICULTY_NORMAL: return "NORMAL";
+        case DIFFICULTY_HARD: return "HARD";
+        case DIFFICULTY_FRUSTRATING: return "FRUSTRATING";
+    }
+}
+function applyDifficultySettings() {
+    switch (difficulty) {
+        case DIFFICULTY_EASIEST:
+            player.hp = 12;
+            for (var _i = 0, enemies_5 = enemies; _i < enemies_5.length; _i++) {
+                var en = enemies_5[_i];
+                en.hp = 4 / 5 * en.hp;
+            }
+            break;
+        case DIFFICULTY_EASY:
+            player.hp = 8;
+            break;
+        case DIFFICULTY_NORMAL:
+            player.hp = 5;
+            break;
+        case DIFFICULTY_HARD:
+            player.hp = 3;
+            for (var _a = 0, enemies_6 = enemies; _a < enemies_6.length; _a++) {
+                var en = enemies_6[_a];
+                en.hp = 6 / 5 * en.hp;
+                en.bossbar.maxHP = en.hp;
+            }
+            break;
+        case DIFFICULTY_FRUSTRATING:
+            player.hp = 2;
+            for (var _b = 0, enemies_7 = enemies; _b < enemies_7.length; _b++) {
+                var en = enemies_7[_b];
+                en.hp = 7 / 5 * en.hp;
+                en.bossbar.maxHP = en.hp;
+            }
+            break;
+    }
+    playerBar.maxHP = player.hp;
+    player.maxHp = player.hp;
+}
+var Inscription = (function (_super) {
+    __extends(Inscription, _super);
+    function Inscription(sprite, pattern) {
+        return _super.call(this, sprite, new CircleCollider(0), pattern) || this;
+    }
+    return Inscription;
+}(Item));
+function showDefeatedScreen() {
+    var screen = new PIXI.Container();
+    var blacken = new PIXI.Graphics();
+    blacken.beginFill(0x000000, 0.1);
+    blacken.drawRect(0, 0, WIDTH, HEIGHT);
+    blacken.endFill();
+    screen.addChild(blacken);
+    var congText = new PIXI.Text("You have been defeated.");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 1;
+    congText.x = WIDTH / 2;
+    congText.y = HEIGHT - 200;
+    congText.style.fontSize = 42;
+    congText.style.fill = [0xFF0000, Colors.PureRed];
+    congText.style.stroke = 0x4a1850;
+    congText.style.strokeThickness = 2;
+    congText.style.dropShadow = true;
+    congText.style.dropShadowColor = '#000000';
+    congText.style.dropShadowBlur = 4;
+    congText.style.dropShadowAngle = Math.PI / 6;
+    congText.style.dropShadowDistance = 6;
+    screen.addChild(congText);
+    var congText = new PIXI.Text("Press [R] to reset the stage or [Esc] to return to menu.");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 0;
+    congText.x = WIDTH / 2;
+    congText.y = HEIGHT - 180;
+    congText.style.align = "CENTER";
+    congText.style.fontSize = 24;
+    congText.style.fill = 0x000000;
+    screen.addChild(congText);
+    screen.alpha = 0;
+    var inscription = new Inscription(screen, new SequencePattern([
+        new FixedDuration(50),
+        new SpecialPattern(function (delta, item, pattern) {
+            item.sprite.alpha += delta / 40;
+            console.log(item.sprite.alpha);
+            if (item.sprite.alpha > 1) {
+                item.sprite.alpha = 1;
+            }
+        }).While(new FixedDuration(40)),
+        new StandingPattern()
+    ]));
+    stage.addChild(screen);
+    hud.push(inscription);
+}
+function createPreperfectScreen(index, char) {
+    var text = new PIXI.Text(char, {
+        fontSize: 28
+    });
+    text.style.fill = [0xFFFF00, Colors.GoldenYellow];
+    text.style.stroke = 0x4a1850;
+    text.style.strokeThickness = 2;
+    text.style.dropShadow = true;
+    text.style.dropShadowColor = '#000000';
+    text.style.dropShadowBlur = 4;
+    text.style.dropShadowAngle = Math.PI / 6;
+    text.style.dropShadowDistance = 6;
+    text.anchor.x = 0.5;
+    text.anchor.y = 0.5;
+    text.y = HEIGHT / 2;
+    text.scale.x = 20;
+    text.scale.y = 20;
+    text.alpha = 0;
+    var midpoint = "PERFECT!".length / 2 - 1;
+    text.x = WIDTH / 2 + (index - midpoint) * 20;
+    stage.addChild(text);
+    var preWait = index * 5;
+    var postWait = 120 - preWait;
+    var letter = new Inscription(text, new SequencePattern([
+        new FixedDuration(preWait),
+        new SpecialPattern(function (delta, item, pattern) {
+            item.sprite.alpha += delta / 10;
+            item.sprite.scale.x -= delta * 19 / 10;
+            item.sprite.scale.y -= delta * 19 / 10;
+        }).While(new FixedDuration(10)),
+        new OneShot(function (item) {
+            item.sprite.alpha = 1;
+            item.sprite.scale.x = 1;
+            item.sprite.scale.y = 1;
+        }),
+        new FixedDuration(postWait),
+        new DisappearingPattern(20)
+    ]));
+    hud.push(letter);
+}
+function showCongratulationsScreen() {
+    var curDate = new Date();
+    var secs = Math.round((curDate.valueOf() - dateOfStart.valueOf()) / 1000);
+    var lifeLost = player.maxHp - player.hp;
+    var isPerfect = lifeLost == 0;
+    var screen = new PIXI.Container();
+    var blacken = new PIXI.Graphics();
+    blacken.beginFill(0x000000, 0.3);
+    blacken.drawRect(0, 0, WIDTH, HEIGHT);
+    blacken.endFill();
+    screen.addChild(blacken);
+    var congText = new PIXI.Text(isPerfect ? "PERFECT!" : "CONGRATULATIONS!");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 1;
+    congText.x = WIDTH / 2;
+    congText.y = 200;
+    congText.style.fontSize = 42;
+    congText.style.fill = 0xFFFFFF;
+    if (isPerfect) {
+        congText.style.fill = [0xFFFF00, Colors.GoldenYellow];
+        congText.style.stroke = 0x4a1850;
+        congText.style.strokeThickness = 2;
+        congText.style.dropShadow = true;
+        congText.style.dropShadowColor = '#000000';
+        congText.style.dropShadowBlur = 4;
+        congText.style.dropShadowAngle = Math.PI / 6;
+        congText.style.dropShadowDistance = 6;
+    }
+    screen.addChild(congText);
+    var congText = new PIXI.Text("You have defeated the " + Levels.getLevel(loadedLevel).bossname + "!\n\nTime taken: " + secs + " s\n\nLife lost: " + lifeLost + "\n\nDifficulty: " + difficultyToString(difficulty) + "\n\nPress ESC to return to menu.");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 0;
+    congText.x = WIDTH / 2;
+    congText.y = 220;
+    congText.style.align = "CENTER";
+    congText.style.fontSize = 24;
+    congText.style.fill = 0xFFFFFF;
+    screen.addChild(congText);
+    screen.alpha = 0;
+    var inscription = new Inscription(screen, new SequencePattern([
+        new FixedDuration(isPerfect ? 150 : 50),
+        new SpecialPattern(function (delta, item, pattern) {
+            item.sprite.alpha += delta / 40;
+            console.log(item.sprite.alpha);
+            if (item.sprite.alpha > 1) {
+                item.sprite.alpha = 1;
+            }
+        }).While(new FixedDuration(40)),
+        new StandingPattern()
+    ]));
+    if (isPerfect) {
+        var perfectWord = "PERFECT!";
+        for (var i = 0; i < "PERFECT!".length; i++) {
+            createPreperfectScreen(i, perfectWord.charAt(i));
+        }
+    }
+    stage.addChild(screen);
+    hud.push(inscription);
+}
 //# sourceMappingURL=compiled-code.js.map

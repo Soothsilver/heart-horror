@@ -1,17 +1,18 @@
-﻿var WIDTH = 1280;
+﻿///<reference path="ts/Level.ts" />
+var WIDTH = 1280;
 var HEIGHT = 720;
 var renderer = PIXI.autoDetectRenderer(WIDTH, HEIGHT, { backgroundColor: 0x1099bb });
 var stage = new PIXI.Container();
 var ticker = new PIXI.ticker.Ticker();
 ticker.add(() => renderer.render(stage));
 ticker.start();
-//renderer.resize(20, 20);
 
 renderer.render(stage);
 $(document).ready(() => {
     document.getElementById("viewport").appendChild(renderer.view);
+    loadLocalStorage();
     openMenu();
-  //  startLevel(Levels.AlienVessel);
+    // startLevel(Levels.DeepEye);
 });
  
 
@@ -59,7 +60,8 @@ var difficulty: number = 3;
 
 ticker.add(function (delta) {
     if (basicText != null) {
-        basicText.text = "Difficulty: " + difficultyToString(difficulty) + "\nFPS: " + ticker.FPS.toPrecision(2) + "\nBullets: " + bullets.length + "\nBoss: " + (enemies.length > 0 ? enemies[0].pattern.explain() : "");
+        basicText.text = "Difficulty: " + difficultyToString(difficulty) +
+            "\nBoss: " + (enemies.length > 0 ? enemies[0].pattern.explain() : "");
     }
     if (player != null) {
         if (player.controllable) {
@@ -108,6 +110,14 @@ ticker.add(function (delta) {
         if (bullet.isOutOfGame()) {
             stage.removeChild(bullet.sprite);
             bullets.splice(i, 1);
+        }
+    }
+    for (var i = hud.length - 1; i >= 0; i--) {
+        var inscription = hud[i];
+        inscription.update(delta);
+        if (inscription.isOutOfGame()) {
+            stage.removeChild(inscription.sprite);
+            hud.splice(i, 1);
         }
     }
     if (player != null) {

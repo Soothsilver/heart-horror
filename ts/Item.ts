@@ -18,7 +18,7 @@
 
     public fadeout() {
         this.harmless = true;
-        this.pattern = new Both([this.pattern, new DisappearingPattern(60)]);
+        this.pattern = new Both([this.pattern, new DisappearingPattern(30)]);
     }
 
     public isOutOfGame(): boolean {

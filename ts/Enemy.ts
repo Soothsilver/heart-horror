@@ -3,12 +3,17 @@
     public hp: number;
     public isBoss: boolean;
     public bossbar: BossBar;
+    public immortal: boolean;
 
     public loseHP(lost: number) {
+        if (this.immortal) {
+            return;
+        }
         this.hp -= lost;
         if (this.hp <= 0) {
-            this.gone = true;
-            gameWon();
+            this.immortal = true;
+            this.pattern = new CombinationPattern([this.pattern, new DisappearingPattern(30)]);
+            bossDefeated();
         }
     }
     public update(delta: number) {

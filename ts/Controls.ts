@@ -1,4 +1,5 @@
-﻿var menuOpen: boolean = false;
+﻿
+var menuOpen: boolean = false;
 function openMenu() {
     menuOpen = true;
     $("#mainmenu").show(100);
@@ -26,6 +27,16 @@ function openLevel(level: number) {
 function fastReset() {
     doIntro = false;
     reset();
+}
+function changeSkipConfirmation() {
+    var skip = $('#skipConfirmation').is(":checked");
+    window.localStorage.setItem("skipConfirmation", skip ? "yes" : "no");
+    skipIntro = skip;
+}
+function reloadSkipConfirmation() {
+    var shouldSkip : boolean = window.localStorage.getItem("skipConfirmation") == "yes";
+    $("#skipConfirmation").prop('checked', shouldSkip);
+    skipIntro = shouldSkip;
 }
 function pause() {
     if (!paused) {

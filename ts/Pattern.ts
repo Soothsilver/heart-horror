@@ -12,8 +12,14 @@
     public Then(then: Pattern): SequencePattern {
         return new SequencePattern([this, then]);
     }
+    public And(and: Pattern): Both {
+        return new Both([this, and]);
+    }
+    public Named(name: string): NamedPattern {
+        return new NamedPattern(this, name);
+    }
     public explain(): string {
-        return "";
+        return "?";
     }
 }
 class StandingPattern extends Pattern {
@@ -30,6 +36,47 @@ class OneShot extends Pattern {
     public update(delta: number, item: Item) {
         this.func(item);
         this.spent = true;
+    }
+}
+class SpecialPattern extends Pattern {
+    private func: (delta: number, item: Item, pattern: SpecialPattern) => void;
+    constructor(func: (delta: number, item: Item, pattern: SpecialPattern) => void) {
+        super();
+        this.func = func;
+    }
+    public update(delta: number, item: Item) {
+        this.func(delta, item, this);
+    }
+
+    public explain(): string {
+        return "special";
+    }
+}
+abstract class DelegatingPattern extends Pattern {
+    private inner: Pattern;
+    constructor(pattern : Pattern) {
+        super();
+        this.inner = pattern;
+    }
+    public update(delta: number, item: Item) {
+        this.inner.update(delta, item);
+        if (this.inner.spent) {
+            this.spent = true;
+        }
+    }
+
+    public explain(): string {
+        return this.inner.explain();
+    }
+}
+class NamedPattern extends DelegatingPattern {
+    private name: string;
+    public constructor(pattern: Pattern, name: string) {
+        super(pattern);
+        this.name = name;
+    }
+    public explain(): string {
+        return this.name;
     }
 }
 class DisappearingPattern extends Pattern {

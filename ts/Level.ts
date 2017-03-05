@@ -2,8 +2,9 @@
 // Player and boss
 var enemies: Enemy[] = [];
 var bullets: Bullet[] = [];
+var hud: Inscription[] = [];
 var player: Player;
-var loadedLevel: number;
+var loadedLevel: number = -1;
 var doIntro: boolean;
 
 
@@ -18,53 +19,141 @@ function startLevel(level: number) {
     reset();
 }
 var INTRO_TIME = 240;
-var animatedEntities: PIXI.extras.AnimatedSprite[];
+var animatedEntities: PIXI.extras.AnimatedSprite[] = [];
+
+
+function openLevelsUpTo(maxlevel: number) {
+    for (var i: number = 0; i < 6; i++) {
+        if (i > maxlevel + 1) {
+            continue;
+        }
+        $("#lvl" + i).prop("disabled", false);
+    }
+}
+function reloadAccessibleLevels() {
+    var n: number = parseInt(window.localStorage.getItem("level"));
+    if (isNaN(n)) {
+        openLevelsUpTo(-1);
+    } else {
+        openLevelsUpTo(n);
+    }
+}
+
+var DIFFICULTY_EASIEST = 1;
+var DIFFICULTY_EASY = 2;
+var DIFFICULTY_NORMAL = 3;
+var DIFFICULTY_HARD = 4;
+var DIFFICULTY_FRUSTRATING = 5;
+function reloadDifficulty() {
+    difficulty = parseInt(window.localStorage.getItem("difficulty"));
+    console.log("D");
+    console.log(difficulty);
+    if (isNaN(difficulty)) {
+        difficulty = DIFFICULTY_NORMAL;
+        console.log(difficulty);
+    }
+    $("#difficulty").val(difficulty);
+}
+function saveLevelAsCompleted(level: number) {
+    var n: number = parseInt(window.localStorage.getItem("level"));
+    if (level > n || isNaN(n)) {
+        window.localStorage.setItem("level", level.toString());
+    }
+    reloadAccessibleLevels();
+}
+function bossDefeated() {
+    numberOfBossesRemaining--;
+    if (numberOfBossesRemaining <= 0) {
+        clearEnemies();
+        clearEnemyBullets();
+        gameEnded = true;
+        saveLevelAsCompleted(loadedLevel);
+        for (var en of enemies) {
+            en.harmless = true;
+        }
+        showCongratulationsScreen();
+    }
+}
+function gameLost() {
+    gameEnded = true;
+    clearFriendlyBullets();
+    playerBar.remove();
+    showDefeatedScreen();
+}
+
+function clearFriendlyBullets() {
+    for (var en of bullets) {
+        if (en.friendly)
+            en.fadeout();
+    }
+}
+function clearEnemies() {
+    for (var en of enemies) {
+        if (!en.isBoss) {
+            en.fadeout();
+        }
+    }
+}
+function clearEnemyBullets() {
+    for (var en of bullets) {
+        if (!en.friendly)
+            en.fadeout();
+    }
+}
+
+var dateOfStart: Date;
+
 function reset() {
     stage.removeChildren();
     bullets = [];
     enemies = [];
     animatedEntities = [];
-    player = new Player(doIntro);
-    spawnBosses(loadedLevel, doIntro);
-    gameEnded = false;
-    playerBar = new PlayerBar();
-    // FPS    
-    basicText = new PIXI.Text("FPS: ?");
-    basicText.x = 10;
-    basicText.y = 10;
-    stage.addChild(basicText);
+    if (loadedLevel >= 0) {
+        player = new Player(doIntro);
+        spawnBosses(loadedLevel, doIntro);
+        gameEnded = false;
+        numberOfBossesRemaining = 1;
+        playerBar = new PlayerBar();
+        dateOfStart = new Date();
+        // FPS    
+        basicText = new PIXI.Text("FPS: ?");
+        basicText.x = 10;
+        basicText.y = 10;
+        stage.addChild(basicText);
 
-    // Apply difficulty settings
-    applyDifficultySettings();
+        // Apply difficulty settings
+        applyDifficultySettings();
 
-    separatorGraphics = new PIXI.Graphics();
-    stage.addChild(separatorGraphics);
-    // Pause
-    pauseScreen = new PIXI.Container();
-    pauseScreen.x = 0;
-    pauseScreen.y = 0;
-    var darkenEverything = new PIXI.Graphics();
-    darkenEverything.beginFill(0x000000, 0.6);
-    darkenEverything.lineStyle(0);
-    darkenEverything.drawRect(0, 0, WIDTH, HEIGHT);
-    darkenEverything.endFill();
-    pauseScreen.addChild(darkenEverything);
-    var pauseText = new PIXI.Text("PAUSED");
-    pauseText.style.fontSize = 36;
-    pauseText.style.fill = 0xFFFFFF;
-    pauseText.anchor.x = 0.5;
-    pauseText.anchor.y = 0.5;
-    pauseText.x = WIDTH / 2;
-    pauseText.y = HEIGHT / 2;
-    pauseScreen.addChild(pauseText);
-    var pauseText2 = new PIXI.Text("Press any game key to continue.");
-    pauseText2.style.fontSize = 22;
-    pauseText2.style.fill = 0xFFFFFF;
-    pauseText2.anchor.x = 0.5;
-    pauseText2.anchor.y = 0.5;
-    pauseText2.x = WIDTH / 2;
-    pauseText2.y = HEIGHT / 2 + 35;
-    pauseScreen.addChild(pauseText2);
+        separatorGraphics = new PIXI.Graphics();
+        stage.addChild(separatorGraphics);
+
+        // Pause
+        pauseScreen = new PIXI.Container();
+        pauseScreen.x = 0;
+        pauseScreen.y = 0;
+        var darkenEverything = new PIXI.Graphics();
+        darkenEverything.beginFill(0x000000, 0.6);
+        darkenEverything.lineStyle(0);
+        darkenEverything.drawRect(0, 0, WIDTH, HEIGHT);
+        darkenEverything.endFill();
+        pauseScreen.addChild(darkenEverything);
+        var pauseText = new PIXI.Text("PAUSED");
+        pauseText.style.fontSize = 36;
+        pauseText.style.fill = 0xFFFFFF;
+        pauseText.anchor.x = 0.5;
+        pauseText.anchor.y = 0.5;
+        pauseText.x = WIDTH / 2;
+        pauseText.y = HEIGHT / 2;
+        pauseScreen.addChild(pauseText);
+        var pauseText2 = new PIXI.Text("Click here or press any game key to continue.");
+        pauseText2.style.fontSize = 22;
+        pauseText2.style.fill = 0xFFFFFF;
+        pauseText2.anchor.x = 0.5;
+        pauseText2.anchor.y = 0.5;
+        pauseText2.x = WIDTH / 2;
+        pauseText2.y = HEIGHT / 2 + 35;
+        pauseScreen.addChild(pauseText2);
+    }
 }
 function spawnBosses(level : number, doIntro : boolean) {
 

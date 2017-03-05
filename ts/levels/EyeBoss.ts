@@ -23,21 +23,21 @@ function createEyeBoss(): Pattern {
             new RepeatPattern(() => [
                 new RepeatPattern(() =>
                     [
-                        new FixedDuration(120).While(shooting).While(rotating),
-                        new SimpleMove(-400, 0, 100).While(atPlayer),
-                        new FixedDuration(30).While(shooting2),
-                        new SimpleMove(800, 0, 200).While(atPlayer),
-                        new FixedDuration(30).While(shooting2),
-                        new SimpleMove(-400, 0, 100).While(atPlayer),
+                        new FixedDuration(120).While(shooting).While(rotating).Named("Full Rotation Eye Cannon"),
+                        new SimpleMove(-400, 0, 100).While(atPlayer).Named("Sweep Left"),
+                        new FixedDuration(30).While(shooting2).Named("Discharge"),
+                        new SimpleMove(800, 0, 200).While(atPlayer).Named("Sweep Right"),
+                        new FixedDuration(30).While(shooting2).Named("Discharge"),
+                        new SimpleMove(-400, 0, 100).While(atPlayer).Named("Sweep Left"),
                     ], 1),
                 new RandomPattern([
                     new SequencePattern([
-                        new SimpleMove(0, 200, 50),
+                        new SimpleMove(0, 200, 50).Named("Prime Explosive Eyes"),
                         new OneShot(fireBombs),
-                        new SimpleMove(0, -200, 50),
+                        new SimpleMove(0, -200, 50).Named("Explosive Eyes"),
                     ]),
                     new SequencePattern([
-                        new SimpleMove(500, 200, 100),
+                        new SimpleMove(500, 200, 100).Named("Prime Laser"),
                         new OneShot((boss) => {
                             var laserSprite = createBulletSprite(boss.x(), boss.y() + 300, "blueLaser.png");
                             laserSprite.scale.y = 7;
@@ -46,8 +46,8 @@ function createEyeBoss(): Pattern {
                             bb.indestructible = true;
                             spawnBullet(bb);
                         }),
-                        new SimpleMove(-1000, 0, 500).While(atPlayer),
-                        new SimpleMove(500, -200, 100),
+                        new SimpleMove(-1000, 0, 500).While(atPlayer).Named("Laser Sweep"),
+                        new SimpleMove(500, -200, 100).Named("Recover Self"),
                     ])
                 ])
             ])
