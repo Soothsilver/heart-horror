@@ -11,8 +11,8 @@ renderer.render(stage);
 $(document).ready(() => {
     document.getElementById("viewport").appendChild(renderer.view);
     loadLocalStorage();
-    //openMenu();
-    startLevel(Levels.DeepEyes);
+    openMenu();
+    //startLevel(Levels.CommandVessel);
 });
  
 

@@ -26,6 +26,9 @@ class StandingPattern extends Pattern {
     public update(delta: number, item: Item) {
         // Do nothing.
     }
+    public explain(): string {
+        return "";
+    }
 }
 class OneShot extends Pattern {
     private func: (item: Item) => void;
