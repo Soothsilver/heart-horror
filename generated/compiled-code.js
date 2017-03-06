@@ -440,6 +440,14 @@ var Item = (function () {
         this.collider.item = this;
         this.pattern = pattern;
     }
+    Item.prototype.getTag = function (tag) {
+        if (isNaN(this.tags[tag])) {
+            return 0;
+        }
+        else {
+            return this.tags[tag];
+        }
+    };
     Item.prototype.update = function (delta) {
         this.pattern.update(delta, this);
     };
@@ -906,7 +914,7 @@ var Enemy = (function (_super) {
         return _super.call(this, sprite, collider, pattern) || this;
     }
     Enemy.prototype.loseHP = function (lost) {
-        if (this.immortal) {
+        if (this.immortal || gameEnded) {
             return;
         }
         this.hp -= lost;
@@ -924,6 +932,158 @@ var Enemy = (function (_super) {
     };
     return Enemy;
 }(Item));
+var Inscription = (function (_super) {
+    __extends(Inscription, _super);
+    function Inscription(sprite, pattern) {
+        return _super.call(this, sprite, new CircleCollider(0), pattern) || this;
+    }
+    return Inscription;
+}(Item));
+function showDefeatedScreen() {
+    var screen = new PIXI.Container();
+    var blacken = new PIXI.Graphics();
+    blacken.beginFill(0x000000, 0.1);
+    blacken.drawRect(0, 0, WIDTH, HEIGHT);
+    blacken.endFill();
+    screen.addChild(blacken);
+    var congText = new PIXI.Text("You have been defeated.");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 1;
+    congText.x = WIDTH / 2;
+    congText.y = HEIGHT - 200;
+    congText.style.fontSize = 42;
+    congText.style.fill = [0xFF0000, Colors.PureRed];
+    congText.style.stroke = 0x4a1850;
+    congText.style.strokeThickness = 2;
+    congText.style.dropShadow = true;
+    congText.style.dropShadowColor = '#000000';
+    congText.style.dropShadowBlur = 4;
+    congText.style.dropShadowAngle = Math.PI / 6;
+    congText.style.dropShadowDistance = 6;
+    screen.addChild(congText);
+    var congText = new PIXI.Text("Press [R] to reset the stage or [Esc] to return to menu.");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 0;
+    congText.x = WIDTH / 2;
+    congText.y = HEIGHT - 180;
+    congText.style.align = "CENTER";
+    congText.style.fontSize = 24;
+    congText.style.fill = 0x000000;
+    screen.addChild(congText);
+    screen.alpha = 0;
+    var inscription = new Inscription(screen, new SequencePattern([
+        new FixedDuration(50),
+        new SpecialPattern(function (delta, item, pattern) {
+            item.sprite.alpha += delta / 40;
+            console.log(item.sprite.alpha);
+            if (item.sprite.alpha > 1) {
+                item.sprite.alpha = 1;
+            }
+        }).While(new FixedDuration(40)),
+        new StandingPattern()
+    ]));
+    stage.addChild(screen);
+    hud.push(inscription);
+}
+function createPreperfectScreen(index, char) {
+    var text = new PIXI.Text(char, {
+        fontSize: 28
+    });
+    text.style.fill = [0xFFFF00, Colors.GoldenYellow];
+    text.style.stroke = 0x4a1850;
+    text.style.strokeThickness = 2;
+    text.style.dropShadow = true;
+    text.style.dropShadowColor = '#000000';
+    text.style.dropShadowBlur = 4;
+    text.style.dropShadowAngle = Math.PI / 6;
+    text.style.dropShadowDistance = 6;
+    text.anchor.x = 0.5;
+    text.anchor.y = 0.5;
+    text.y = HEIGHT / 2;
+    text.scale.x = 20;
+    text.scale.y = 20;
+    text.alpha = 0;
+    var midpoint = "PERFECT!".length / 2 - 1;
+    text.x = WIDTH / 2 + (index - midpoint) * 20;
+    stage.addChild(text);
+    var preWait = index * 5;
+    var postWait = 120 - preWait;
+    var letter = new Inscription(text, new SequencePattern([
+        new FixedDuration(preWait),
+        new SpecialPattern(function (delta, item, pattern) {
+            item.sprite.alpha += delta / 10;
+            item.sprite.scale.x -= delta * 19 / 10;
+            item.sprite.scale.y -= delta * 19 / 10;
+        }).While(new FixedDuration(10)),
+        new OneShot(function (item) {
+            item.sprite.alpha = 1;
+            item.sprite.scale.x = 1;
+            item.sprite.scale.y = 1;
+        }),
+        new FixedDuration(postWait),
+        new DisappearingPattern(20)
+    ]));
+    hud.push(letter);
+}
+function showCongratulationsScreen() {
+    var curDate = new Date();
+    var secs = Math.round((curDate.valueOf() - dateOfStart.valueOf()) / 1000);
+    var lifeLost = player.maxHp - player.hp;
+    var isPerfect = lifeLost == 0;
+    var screen = new PIXI.Container();
+    var blacken = new PIXI.Graphics();
+    blacken.beginFill(0x000000, 0.3);
+    blacken.drawRect(0, 0, WIDTH, HEIGHT);
+    blacken.endFill();
+    screen.addChild(blacken);
+    var congText = new PIXI.Text(isPerfect ? "PERFECT!" : "CONGRATULATIONS!");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 1;
+    congText.x = WIDTH / 2;
+    congText.y = 200;
+    congText.style.fontSize = 42;
+    congText.style.fill = 0xFFFFFF;
+    if (isPerfect) {
+        congText.style.fill = [0xFFFF00, Colors.GoldenYellow];
+        congText.style.stroke = 0x4a1850;
+        congText.style.strokeThickness = 2;
+        congText.style.dropShadow = true;
+        congText.style.dropShadowColor = '#000000';
+        congText.style.dropShadowBlur = 4;
+        congText.style.dropShadowAngle = Math.PI / 6;
+        congText.style.dropShadowDistance = 6;
+    }
+    screen.addChild(congText);
+    var congText = new PIXI.Text("You have defeated the " + Levels.getLevel(loadedLevel).bossname + "!\n\nTime taken: " + secs + " s\n\nLife lost: " + lifeLost + "\n\nDifficulty: " + difficultyToString(difficulty) + "\n\nPress ESC to return to menu.");
+    congText.anchor.x = 0.5;
+    congText.anchor.y = 0;
+    congText.x = WIDTH / 2;
+    congText.y = 220;
+    congText.style.align = "CENTER";
+    congText.style.fontSize = 24;
+    congText.style.fill = 0xFFFFFF;
+    screen.addChild(congText);
+    screen.alpha = 0;
+    var inscription = new Inscription(screen, new SequencePattern([
+        new FixedDuration(isPerfect ? 150 : 50),
+        new SpecialPattern(function (delta, item, pattern) {
+            item.sprite.alpha += delta / 40;
+            console.log(item.sprite.alpha);
+            if (item.sprite.alpha > 1) {
+                item.sprite.alpha = 1;
+            }
+        }).While(new FixedDuration(40)),
+        new StandingPattern()
+    ]));
+    if (isPerfect) {
+        var perfectWord = "PERFECT!";
+        for (var i = 0; i < "PERFECT!".length; i++) {
+            createPreperfectScreen(i, perfectWord.charAt(i));
+        }
+    }
+    stage.addChild(screen);
+    hud.push(inscription);
+}
 var LevelDescription = (function () {
     function LevelDescription(name, desc, makeBoss) {
         this.bossname = name;
@@ -1123,8 +1283,8 @@ var RotationPattern = (function (_super) {
         return _this;
     }
     RotationPattern.prototype.update = function (delta, item) {
-        this.angle += this.angleDiff;
-        this.func(this.angle, delta, item);
+        this.angle += this.angleDiff * delta;
+        this.func(this.angle, delta * this.angleDiff, item);
     };
     RotationPattern.prototype.explain = function () {
         return "rotate";
@@ -1462,6 +1622,44 @@ var AlienVessel;
     }
     AlienVessel.alienVessel = alienVessel;
 })(AlienVessel || (AlienVessel = {}));
+function createCommandVessel() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), CommandVessel.main());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+var CommandVessel;
+(function (CommandVessel) {
+    function main() {
+        return new StandingPattern();
+    }
+    CommandVessel.main = main;
+})(CommandVessel || (CommandVessel = {}));
+function createDeepEyes() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), DeepEyes.main());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+var DeepEyes;
+(function (DeepEyes) {
+    function main() {
+        return new StandingPattern();
+    }
+    DeepEyes.main = main;
+})(DeepEyes || (DeepEyes = {}));
 function createEyeBossBoss() {
     var frammes = [];
     for (var i = 0; i < 8; i++) {
@@ -1579,12 +1777,161 @@ function createEyeBoss() {
     });
     return bossMovement;
 }
+function createPortal() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/stargate.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new CircleCollider(275), Portal.main());
+    boss.hp = 800;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+var Portal;
+(function (Portal) {
+    function main() {
+        return new CombinationPattern([
+            new RotationPattern(60, function (angle, delta, boss) {
+                boss.sprite.rotation = angle;
+            }),
+            new RepeatPattern(function () { return []; })
+        ]);
+    }
+    Portal.main = main;
+})(Portal || (Portal = {}));
+function createTentacleBoss() {
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
+    enemySprite.x = WIDTH / 2;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), TentacleBoss.main());
+    boss.hp = 400;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp);
+    return boss;
+}
+function normalize(x, y) {
+    var len = Math.sqrt(x * x + y * y);
+    return new PIXI.Point(x / len, y / len);
+}
+var TentacleBoss;
+(function (TentacleBoss) {
+    function throwSplittingBalls(boss) {
+        circular(45, 360 + 45, 8, function (xs, ys, rot) {
+            var orbSpeed = 4;
+            console.log(rot);
+            var orbs = createBulletSprite(boss.x(), boss.y(), "orb.png");
+            var origPattern = new UniformMovementPattern(xs * orbSpeed, ys * orbSpeed)
+                .While(new FixedDuration(60)
+                .Then(new OneShot(function (orig) {
+                orig.gone = true;
+                circular(radiansToDegrees(rot) - 30, radiansToDegrees(rot) + 30, 3, function (x2, y2, rot2) {
+                    var orbSpeed = 8;
+                    var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
+                    orbs.scale.x = 0.5;
+                    orbs.scale.y = 0.5;
+                    var orb = new Bullet(false, orbs, new CircleCollider(10), new UniformMovementPattern(x2 * orbSpeed, y2 * orbSpeed).While(new FixedDuration(60)
+                        .Then(new OneShot(function (orig) {
+                        orig.gone = true;
+                        circular(radiansToDegrees(rot2) - 30, radiansToDegrees(rot2) + 30, 3, function (x3, y3, rot3) {
+                            var orbSpeed = 16;
+                            var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
+                            orbs.scale.x = 0.5;
+                            orbs.scale.y = 0.5;
+                            var orb = new Bullet(false, orbs, new CircleCollider(10), new UniformMovementPattern(x3 * orbSpeed, y3 * orbSpeed));
+                            spawnBullet(orb);
+                        });
+                    }))));
+                    spawnBullet(orb);
+                });
+            })));
+            var orb = new Bullet(false, orbs, new CircleCollider(20), origPattern);
+            spawnBullet(orb);
+        });
+    }
+    function star() {
+        return new CombinationPattern([
+            new RepeatPattern(function () { return [
+                new RotationPattern(400, function (ang, del, itm) { return itm.tags["rotation"] = itm.getTag("rotation") + del; }).While(new FixedDuration(120)),
+                new RotationPattern(400, function (ang, del, itm) { return itm.tags["rotation"] = itm.getTag("rotation") - del; }).While(new FixedDuration(120))
+            ]; }),
+            new PeriodicPattern(1, function (boss, pattern) {
+                for (var i = 0; i < 4; i++) {
+                    var speed = 14;
+                    var rotation = boss.tags["rotation"] + Math.PI * i / 2;
+                    var xs = Math.cos(rotation) * speed;
+                    var ys = Math.sin(rotation) * speed;
+                    var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs, ys));
+                    spawnBullet(b);
+                }
+            }),
+        ]).While(new FixedDuration(400));
+    }
+    function main() {
+        var atPlayer = new PeriodicPattern(16, function (boss) {
+            var BULLET_SPEED = 10;
+            var dx = (player.x() - boss.x());
+            var dy = (player.y() - boss.y());
+            var total = Math.sqrt(dx * dx + dy * dy);
+            var xs = BULLET_SPEED * dx / total;
+            var ys = BULLET_SPEED * dy / total;
+            var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
+            spawnBullet(b);
+        });
+        return new RepeatPattern(function () { return [
+            new RepeatPattern(function () { return [
+                new OneShot(throwSplittingBalls),
+                new SimpleMove(0, 100, 60).Named("'I spit death, puny human!'")
+            ]; }, 3),
+            new RepeatPattern(function () { return [
+                new OneShot(throwSplittingBalls),
+                new SimpleMove(0, -100, 60).Named("'I spit death, puny human!'")
+            ]; }, 3),
+            new FixedDuration(30).Named("'Phew. That was tough.'"),
+            new RepeatPattern(function () { return [
+                new CustomPattern(function (boss) {
+                    return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 40);
+                }),
+                new FixedDuration(30)
+            ]; }, 5).Named("'Stop running, human!'"),
+            new CustomPattern(function (boss) {
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
+            }).Named("'Ha-ha. Get ready for something big!'"),
+            star().Named("'Super Star Mega Sweep!! Muhahahaha!'"),
+            new SpecialPattern(function (delta, item, pattern) {
+                var xd = player.x() - item.x();
+                var yd = player.y() - item.y();
+                var p = normalize(xd, yd);
+                var speed = 5;
+                item.sprite.x += p.x * speed * delta;
+                item.sprite.y += p.y * speed * delta;
+            }).While(new FixedDuration(120)).Named("'You cannot escape, human!'"),
+            new CustomPattern(function (boss) {
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
+            }).Named("'Heh. Now you'll see a \"nuke\".'"),
+            new OneShot(function (boss) {
+                circular(0, 360, 100, function (xs, ys, rot) {
+                    var speed = 14;
+                    var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * speed, ys * speed).While(new FixedDuration(60).Then(new DisappearingPattern(20))));
+                    spawnBullet(b);
+                });
+            }),
+            new FixedDuration(10).Named("'Boom!'"),
+            new CustomPattern(function (boss) {
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT * 1 / 5 - boss.y(), 60);
+            }).While(atPlayer).Named("'Boom!'"),
+        ]; });
+    }
+    TentacleBoss.main = main;
+})(TentacleBoss || (TentacleBoss = {}));
 var SPEED = 7;
 var temporaryGraphics;
 function spawnBullet(bullet) {
     if (gameEnded) {
         bullet.harmless = true;
-        bullet.pattern = new CombinationPattern([bullet.pattern, new DisappearingPattern(60)]);
     }
     bullets.push(bullet);
     addBulletToStage(bullet.sprite);
@@ -1626,7 +1973,7 @@ var Player = (function (_super) {
         this.indestructibilityTicks = 120;
         this.sprite.alpha = 0.3;
         if (this.hp <= 0) {
-            this.gone = true;
+            this.fadeout();
             gameLost();
         }
     };
@@ -1658,7 +2005,7 @@ var Player = (function (_super) {
         this.fireDelay += delta;
         if (this.indestructible) {
             this.indestructibilityTicks -= delta;
-            if (this.indestructibilityTicks < 0) {
+            if (this.indestructibilityTicks < 0 && !gameEnded) {
                 this.indestructible = false;
                 this.sprite.alpha = 1;
             }
@@ -1740,314 +2087,5 @@ function applyDifficultySettings() {
     }
     playerBar.maxHP = player.hp;
     player.maxHp = player.hp;
-}
-function createTentacleBoss() {
-    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
-    enemySprite.x = WIDTH / 2;
-    enemySprite.y = HEIGHT * 1 / 5;
-    enemySprite.anchor.x = 0.5;
-    enemySprite.anchor.y = 0.5;
-    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), TentacleBoss.main());
-    boss.hp = 800;
-    boss.isBoss = true;
-    boss.bossbar = new BossBar(boss.hp);
-    return boss;
-}
-var TentacleBoss;
-(function (TentacleBoss) {
-    function throwSplittingBalls(boss) {
-        circular(45, 360 + 45, 8, function (xs, ys, rot) {
-            var orbSpeed = 5;
-            console.log(rot);
-            var orbs = createBulletSprite(boss.x(), boss.y(), "orb.png");
-            var origPattern = new UniformMovementPattern(xs * orbSpeed, ys * orbSpeed)
-                .While(new FixedDuration(60)
-                .Then(new OneShot(function (orig) {
-                orig.gone = true;
-                circular(radiansToDegrees(rot) - 30, radiansToDegrees(rot) + 30, 3, function (x2, y2, rot2) {
-                    var orbSpeed = 5;
-                    var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
-                    orbs.scale.x = 0.5;
-                    orbs.scale.y = 0.5;
-                    var orb = new Bullet(false, orbs, new CircleCollider(10), new UniformMovementPattern(x2 * orbSpeed, y2 * orbSpeed).While(new FixedDuration(60)
-                        .Then(new OneShot(function (orig) {
-                        orig.gone = true;
-                        circular(radiansToDegrees(rot2) - 30, radiansToDegrees(rot2) + 30, 3, function (x3, y3, rot3) {
-                            var orbSpeed = 5;
-                            var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
-                            orbs.scale.x = 0.25;
-                            orbs.scale.y = 0.25;
-                            var orb = new Bullet(false, orbs, new CircleCollider(5), new UniformMovementPattern(x3 * orbSpeed, y3 * orbSpeed));
-                            spawnBullet(orb);
-                        });
-                    }))));
-                    spawnBullet(orb);
-                });
-            })));
-            var orb = new Bullet(false, orbs, new CircleCollider(20), origPattern);
-            spawnBullet(orb);
-        });
-    }
-    function main() {
-        var atPlayer = new PeriodicPattern(16, function (boss) {
-            var BULLET_SPEED = 10;
-            var dx = (player.x() - boss.x());
-            var dy = (player.y() - boss.y());
-            var total = Math.sqrt(dx * dx + dy * dy);
-            var xs = BULLET_SPEED * dx / total;
-            var ys = BULLET_SPEED * dy / total;
-            var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
-            spawnBullet(b);
-        });
-        return new RepeatPattern(function () { return [
-            new RepeatPattern(function () { return [
-                new OneShot(throwSplittingBalls),
-                new SimpleMove(0, 100, 60).Named("'I spit death, puny human!'")
-            ]; }, 3),
-            new RepeatPattern(function () { return [
-                new OneShot(throwSplittingBalls),
-                new SimpleMove(0, -100, 60).Named("'I spit death, puny human!'")
-            ]; }, 3),
-            new FixedDuration(30),
-            new RepeatPattern(function () { return [
-                new CustomPattern(function (boss) {
-                    return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 30);
-                }),
-                new FixedDuration(30)
-            ]; }, 5),
-            new CustomPattern(function (boss) {
-                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
-            }),
-            new FixedDuration(120),
-            new SpecialPattern(function (delta, item, pattern) {
-                var xd = player.x() - item.x();
-                var yd = player.y() - item.y();
-            }).While(new FixedDuration(120)),
-            new CustomPattern(function (boss) {
-                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
-            }),
-            new OneShot(function (boss) {
-                circular(0, 360, 100, function (xs, ys, rot) {
-                    var speed = 14;
-                    var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * speed, ys * speed).While(new FixedDuration(60).Then(new DisappearingPattern(20))));
-                    spawnBullet(b);
-                });
-            }),
-            new FixedDuration(10),
-            new CustomPattern(function (boss) {
-                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT * 1 / 5 - boss.y(), 60);
-            }).While(atPlayer),
-        ]; });
-    }
-    TentacleBoss.main = main;
-})(TentacleBoss || (TentacleBoss = {}));
-function createPortal() {
-    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
-    enemySprite.x = WIDTH / 2;
-    enemySprite.y = HEIGHT * 1 / 5;
-    enemySprite.anchor.x = 0.5;
-    enemySprite.anchor.y = 0.5;
-    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), Portal.main());
-    boss.hp = 800;
-    boss.isBoss = true;
-    boss.bossbar = new BossBar(boss.hp);
-    return boss;
-}
-var Portal;
-(function (Portal) {
-    function main() {
-        return new StandingPattern();
-    }
-    Portal.main = main;
-})(Portal || (Portal = {}));
-function createCommandVessel() {
-    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
-    enemySprite.x = WIDTH / 2;
-    enemySprite.y = HEIGHT * 1 / 5;
-    enemySprite.anchor.x = 0.5;
-    enemySprite.anchor.y = 0.5;
-    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), CommandVessel.main());
-    boss.hp = 800;
-    boss.isBoss = true;
-    boss.bossbar = new BossBar(boss.hp);
-    return boss;
-}
-var CommandVessel;
-(function (CommandVessel) {
-    function main() {
-        return new StandingPattern();
-    }
-    CommandVessel.main = main;
-})(CommandVessel || (CommandVessel = {}));
-function createDeepEyes() {
-    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
-    enemySprite.x = WIDTH / 2;
-    enemySprite.y = HEIGHT * 1 / 5;
-    enemySprite.anchor.x = 0.5;
-    enemySprite.anchor.y = 0.5;
-    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), DeepEyes.main());
-    boss.hp = 800;
-    boss.isBoss = true;
-    boss.bossbar = new BossBar(boss.hp);
-    return boss;
-}
-var DeepEyes;
-(function (DeepEyes) {
-    function main() {
-        return new StandingPattern();
-    }
-    DeepEyes.main = main;
-})(DeepEyes || (DeepEyes = {}));
-var Inscription = (function (_super) {
-    __extends(Inscription, _super);
-    function Inscription(sprite, pattern) {
-        return _super.call(this, sprite, new CircleCollider(0), pattern) || this;
-    }
-    return Inscription;
-}(Item));
-function showDefeatedScreen() {
-    var screen = new PIXI.Container();
-    var blacken = new PIXI.Graphics();
-    blacken.beginFill(0x000000, 0.1);
-    blacken.drawRect(0, 0, WIDTH, HEIGHT);
-    blacken.endFill();
-    screen.addChild(blacken);
-    var congText = new PIXI.Text("You have been defeated.");
-    congText.anchor.x = 0.5;
-    congText.anchor.y = 1;
-    congText.x = WIDTH / 2;
-    congText.y = HEIGHT - 200;
-    congText.style.fontSize = 42;
-    congText.style.fill = [0xFF0000, Colors.PureRed];
-    congText.style.stroke = 0x4a1850;
-    congText.style.strokeThickness = 2;
-    congText.style.dropShadow = true;
-    congText.style.dropShadowColor = '#000000';
-    congText.style.dropShadowBlur = 4;
-    congText.style.dropShadowAngle = Math.PI / 6;
-    congText.style.dropShadowDistance = 6;
-    screen.addChild(congText);
-    var congText = new PIXI.Text("Press [R] to reset the stage or [Esc] to return to menu.");
-    congText.anchor.x = 0.5;
-    congText.anchor.y = 0;
-    congText.x = WIDTH / 2;
-    congText.y = HEIGHT - 180;
-    congText.style.align = "CENTER";
-    congText.style.fontSize = 24;
-    congText.style.fill = 0x000000;
-    screen.addChild(congText);
-    screen.alpha = 0;
-    var inscription = new Inscription(screen, new SequencePattern([
-        new FixedDuration(50),
-        new SpecialPattern(function (delta, item, pattern) {
-            item.sprite.alpha += delta / 40;
-            console.log(item.sprite.alpha);
-            if (item.sprite.alpha > 1) {
-                item.sprite.alpha = 1;
-            }
-        }).While(new FixedDuration(40)),
-        new StandingPattern()
-    ]));
-    stage.addChild(screen);
-    hud.push(inscription);
-}
-function createPreperfectScreen(index, char) {
-    var text = new PIXI.Text(char, {
-        fontSize: 28
-    });
-    text.style.fill = [0xFFFF00, Colors.GoldenYellow];
-    text.style.stroke = 0x4a1850;
-    text.style.strokeThickness = 2;
-    text.style.dropShadow = true;
-    text.style.dropShadowColor = '#000000';
-    text.style.dropShadowBlur = 4;
-    text.style.dropShadowAngle = Math.PI / 6;
-    text.style.dropShadowDistance = 6;
-    text.anchor.x = 0.5;
-    text.anchor.y = 0.5;
-    text.y = HEIGHT / 2;
-    text.scale.x = 20;
-    text.scale.y = 20;
-    text.alpha = 0;
-    var midpoint = "PERFECT!".length / 2 - 1;
-    text.x = WIDTH / 2 + (index - midpoint) * 20;
-    stage.addChild(text);
-    var preWait = index * 5;
-    var postWait = 120 - preWait;
-    var letter = new Inscription(text, new SequencePattern([
-        new FixedDuration(preWait),
-        new SpecialPattern(function (delta, item, pattern) {
-            item.sprite.alpha += delta / 10;
-            item.sprite.scale.x -= delta * 19 / 10;
-            item.sprite.scale.y -= delta * 19 / 10;
-        }).While(new FixedDuration(10)),
-        new OneShot(function (item) {
-            item.sprite.alpha = 1;
-            item.sprite.scale.x = 1;
-            item.sprite.scale.y = 1;
-        }),
-        new FixedDuration(postWait),
-        new DisappearingPattern(20)
-    ]));
-    hud.push(letter);
-}
-function showCongratulationsScreen() {
-    var curDate = new Date();
-    var secs = Math.round((curDate.valueOf() - dateOfStart.valueOf()) / 1000);
-    var lifeLost = player.maxHp - player.hp;
-    var isPerfect = lifeLost == 0;
-    var screen = new PIXI.Container();
-    var blacken = new PIXI.Graphics();
-    blacken.beginFill(0x000000, 0.3);
-    blacken.drawRect(0, 0, WIDTH, HEIGHT);
-    blacken.endFill();
-    screen.addChild(blacken);
-    var congText = new PIXI.Text(isPerfect ? "PERFECT!" : "CONGRATULATIONS!");
-    congText.anchor.x = 0.5;
-    congText.anchor.y = 1;
-    congText.x = WIDTH / 2;
-    congText.y = 200;
-    congText.style.fontSize = 42;
-    congText.style.fill = 0xFFFFFF;
-    if (isPerfect) {
-        congText.style.fill = [0xFFFF00, Colors.GoldenYellow];
-        congText.style.stroke = 0x4a1850;
-        congText.style.strokeThickness = 2;
-        congText.style.dropShadow = true;
-        congText.style.dropShadowColor = '#000000';
-        congText.style.dropShadowBlur = 4;
-        congText.style.dropShadowAngle = Math.PI / 6;
-        congText.style.dropShadowDistance = 6;
-    }
-    screen.addChild(congText);
-    var congText = new PIXI.Text("You have defeated the " + Levels.getLevel(loadedLevel).bossname + "!\n\nTime taken: " + secs + " s\n\nLife lost: " + lifeLost + "\n\nDifficulty: " + difficultyToString(difficulty) + "\n\nPress ESC to return to menu.");
-    congText.anchor.x = 0.5;
-    congText.anchor.y = 0;
-    congText.x = WIDTH / 2;
-    congText.y = 220;
-    congText.style.align = "CENTER";
-    congText.style.fontSize = 24;
-    congText.style.fill = 0xFFFFFF;
-    screen.addChild(congText);
-    screen.alpha = 0;
-    var inscription = new Inscription(screen, new SequencePattern([
-        new FixedDuration(isPerfect ? 150 : 50),
-        new SpecialPattern(function (delta, item, pattern) {
-            item.sprite.alpha += delta / 40;
-            console.log(item.sprite.alpha);
-            if (item.sprite.alpha > 1) {
-                item.sprite.alpha = 1;
-            }
-        }).While(new FixedDuration(40)),
-        new StandingPattern()
-    ]));
-    if (isPerfect) {
-        var perfectWord = "PERFECT!";
-        for (var i = 0; i < "PERFECT!".length; i++) {
-            createPreperfectScreen(i, perfectWord.charAt(i));
-        }
-    }
-    stage.addChild(screen);
-    hud.push(inscription);
 }
 //# sourceMappingURL=compiled-code.js.map

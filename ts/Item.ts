@@ -5,6 +5,14 @@
     public gone: boolean;
     public harmless: boolean;
     public tags: { [tag: string]: number } = {};
+    public getTag(tag: string): number {
+        if (isNaN(this.tags[tag])) {
+            return 0;
+        }
+        else {
+            return this.tags[tag];
+        }
+    }
 
     public update(delta: number) {
         this.pattern.update(delta, this);

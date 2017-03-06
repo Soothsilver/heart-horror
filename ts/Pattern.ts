@@ -139,16 +139,16 @@ class PeriodicPattern extends Pattern {
 class RotationPattern extends Pattern {
     private angle: number;
     private angleDiff: number;
-    private func: (angle: number, delta: number, item: Item) => void;
-    constructor(fullRotationTime: number, func: (angle : number, delta : number, item :Item )=> void) {
+    private func: (angle: number, deltaRotation: number, item: Item) => void;
+    constructor(fullRotationTime: number, func: (angle: number, deltaRotation : number, item :Item )=> void) {
         super();
         this.angle = 0;
         this.angleDiff = Math.PI * 2 / fullRotationTime;
         this.func = func;
     }
     public update(delta: number, item: Item) {
-        this.angle += this.angleDiff;
-        this.func(this.angle, delta, item);
+        this.angle += this.angleDiff * delta;
+        this.func(this.angle, delta * this.angleDiff, item);
     }
     public explain(): string {
         return "rotate";

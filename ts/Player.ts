@@ -3,7 +3,6 @@ var temporaryGraphics: PIXI.Graphics;
 function spawnBullet(bullet: Bullet) {
     if (gameEnded) {
         bullet.harmless = true;
-        bullet.pattern = new CombinationPattern([bullet.pattern, new DisappearingPattern(60)]);
     }
     bullets.push(bullet);
     addBulletToStage(bullet.sprite);
@@ -27,7 +26,7 @@ class Player extends Item {
         this.indestructibilityTicks = 120;
         this.sprite.alpha = 0.3;
         if (this.hp <= 0) {
-            this.gone = true;
+            this.fadeout();
             gameLost();
         }
     }
@@ -55,7 +54,7 @@ class Player extends Item {
         this.fireDelay += delta;
         if (this.indestructible) {
             this.indestructibilityTicks -= delta;
-            if (this.indestructibilityTicks < 0) {
+            if (this.indestructibilityTicks < 0 && !gameEnded) {
                 this.indestructible = false;
                 this.sprite.alpha = 1;
             }

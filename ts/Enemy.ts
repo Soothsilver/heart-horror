@@ -6,7 +6,7 @@
     public immortal: boolean;
 
     public loseHP(lost: number) {
-        if (this.immortal) {
+        if (this.immortal || gameEnded) {
             return;
         }
         this.hp -= lost;
