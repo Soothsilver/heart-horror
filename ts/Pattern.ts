@@ -329,3 +329,40 @@ class UniformMovementPattern extends Pattern {
         return "move";
     }
 }
+class EllipseMovement extends Pattern {
+    private currentAngle: number;
+    private timeRemaining: number;
+    private angleDiff: number;
+    private a: number;
+    private b: number;
+    private cx: number;
+    private cy: number;
+    private finalAngle: number;
+    public constructor(centerX: number, centerY: number, a: number, b: number, initAngle: number, finalAngle: number, time: number) {
+        super();
+        this.finalAngle = degreesToRadian(finalAngle);
+        this.currentAngle = degreesToRadian(initAngle);
+        this.cx = centerX;
+        this.cy = centerY;
+        this.a = a;
+        this.b = b;
+        this.timeRemaining = time;
+        this.angleDiff = (this.finalAngle - this.currentAngle) / time;
+    }
+    public update(delta: number, item: Item) {
+        this.currentAngle += delta * this.angleDiff;
+        this.timeRemaining -= delta;
+        if (this.timeRemaining <= 0) {
+            this.currentAngle = this.finalAngle;
+            this.spent = true;
+        }
+        var x = this.cx + this.a * Math.cos(this.currentAngle);
+        var y = this.cy + this.b * Math.sin(this.currentAngle);
+        item.sprite.x = x;
+        item.sprite.y = y;
+    }
+
+    public explain(): string {
+        return "ellipse-move";
+    }
+}

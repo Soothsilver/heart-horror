@@ -64,20 +64,32 @@ class Player extends Item {
         super(null, new CircleCollider(4), new StandingPattern());
         var texture = PIXI.Texture.fromImage('img/ship.png');
         var playerSprite = new PIXI.Sprite(texture);
+        var container = new PIXI.Container();
         playerSprite.anchor.x = 0.5;
-        stage.addChild(playerSprite);
+       // stage.addChild(playerSprite);
         playerSprite.anchor.y = 0.65;
-        playerSprite.x = WIDTH / 2;
+        playerSprite.x = 0;
+        playerSprite.y = 0;
+        container.x = WIDTH / 2;
         if (doIntro) {
-            playerSprite.y = HEIGHT * 5 / 4;
+            container.y = HEIGHT * 5 / 4;
             this.controllable = false;
             this.pattern = new SimpleMove(0, -HEIGHT * 2 / 4, INTRO_TIME).Then(new OneShot((self) => this.controllable = true));
         }
         else {
-            playerSprite.y = HEIGHT * 3 / 4;
+            container.y = HEIGHT * 3 / 4;
         }
         playerSprite.width = 64;
         playerSprite.height = 64;
-        this.sprite = playerSprite;
+        var center = new PIXI.Graphics();
+        center.lineStyle(2, Colors.GrassGreen);
+        center.beginFill(0xFFFFFF);
+        center.drawCircle(0, 0, 4);
+        center.endFill();
+        
+        container.addChild(playerSprite);
+        container.addChild(center);
+        stage.addChild(container);
+        this.sprite = container;
     }
 }

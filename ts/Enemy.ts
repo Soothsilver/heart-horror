@@ -13,7 +13,9 @@
         if (this.hp <= 0) {
             this.immortal = true;
             this.pattern = new CombinationPattern([this.pattern, new DisappearingPattern(30)]);
-            bossDefeated();
+            if (this.isBoss) {
+                bossDefeated();
+            }
         }
     }
     public update(delta: number) {

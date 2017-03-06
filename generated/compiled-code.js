@@ -206,6 +206,7 @@ function reset() {
 function spawnBosses(level, doIntro) {
     var boss = Levels.getLevel(level).bossCreation();
     if (doIntro) {
+        var originalY = boss.sprite.y;
         boss.sprite.y = -HEIGHT * 3 / 5;
         boss.pattern = new SequencePattern([
             new OneShot(function () {
@@ -261,7 +262,7 @@ renderer.render(stage);
 $(document).ready(function () {
     document.getElementById("viewport").appendChild(renderer.view);
     loadLocalStorage();
-    openMenu();
+    startLevel(Levels.MysteriousPortal);
 });
 var playerBar;
 var basicText;
@@ -921,7 +922,9 @@ var Enemy = (function (_super) {
         if (this.hp <= 0) {
             this.immortal = true;
             this.pattern = new CombinationPattern([this.pattern, new DisappearingPattern(30)]);
-            bossDefeated();
+            if (this.isBoss) {
+                bossDefeated();
+            }
         }
     };
     Enemy.prototype.update = function (delta) {
@@ -1481,6 +1484,37 @@ var UniformMovementPattern = (function (_super) {
     };
     return UniformMovementPattern;
 }(Pattern));
+var EllipseMovement = (function (_super) {
+    __extends(EllipseMovement, _super);
+    function EllipseMovement(centerX, centerY, a, b, initAngle, finalAngle, time) {
+        var _this = _super.call(this) || this;
+        _this.finalAngle = degreesToRadian(finalAngle);
+        _this.currentAngle = degreesToRadian(initAngle);
+        _this.cx = centerX;
+        _this.cy = centerY;
+        _this.a = a;
+        _this.b = b;
+        _this.timeRemaining = time;
+        _this.angleDiff = (_this.finalAngle - _this.currentAngle) / time;
+        return _this;
+    }
+    EllipseMovement.prototype.update = function (delta, item) {
+        this.currentAngle += delta * this.angleDiff;
+        this.timeRemaining -= delta;
+        if (this.timeRemaining <= 0) {
+            this.currentAngle = this.finalAngle;
+            this.spent = true;
+        }
+        var x = this.cx + this.a * Math.cos(this.currentAngle);
+        var y = this.cy + this.b * Math.sin(this.currentAngle);
+        item.sprite.x = x;
+        item.sprite.y = y;
+    };
+    EllipseMovement.prototype.explain = function () {
+        return "ellipse-move";
+    };
+    return EllipseMovement;
+}(Pattern));
 function createAlienVesselBoss() {
     var enemySprite = PIXI.Sprite.fromImage("img/boss/blackship.png");
     enemySprite.x = WIDTH / 2;
@@ -1778,12 +1812,12 @@ function createEyeBoss() {
     return bossMovement;
 }
 function createPortal() {
-    var enemySprite = PIXI.Sprite.fromImage("img/boss/stargate.png");
+    var enemySprite = PIXI.Sprite.fromImage("img/boss/portal.png");
     enemySprite.x = WIDTH / 2;
-    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.y = HEIGHT * 1 / 10;
     enemySprite.anchor.x = 0.5;
     enemySprite.anchor.y = 0.5;
-    var boss = new Enemy(enemySprite, new CircleCollider(275), Portal.main());
+    var boss = new Enemy(enemySprite, new CircleCollider(150), Portal.main());
     boss.hp = 800;
     boss.isBoss = true;
     boss.bossbar = new BossBar(boss.hp);
@@ -1791,12 +1825,264 @@ function createPortal() {
 }
 var Portal;
 (function (Portal) {
+    var fireFirer = function (boss) {
+        var randomx = getRandomExclusive(0, 2) == 0 ? getRandomExclusive(20, 40) : getRandomExclusive(WIDTH - 40, WIDTH - 20);
+        var randomy = getRandomExclusive(20, HEIGHT - 20);
+        var firerPattern = new SimpleMove(randomx - boss.x(), randomy - boss.y(), 120)
+            .Then(new FixedDuration(30))
+            .Then(new OneShot(function (firer) {
+            var BULLET_SPEED = 10;
+            var dx = (player.x() - firer.x());
+            var dy = (player.y() - firer.y());
+            var total = Math.sqrt(dx * dx + dy * dy);
+            var xs = BULLET_SPEED * dx / total;
+            var ys = BULLET_SPEED * dy / total;
+            firer.tags["xs"] = xs;
+            firer.tags["ys"] = ys;
+        }))
+            .Then(new FixedDuration(60).While(new PeriodicPattern(4, function (firer) {
+            var xs = firer.tags["xs"];
+            var ys = firer.tags["ys"];
+            var b = new Bullet(false, createBulletSprite(firer.x(), firer.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
+            spawnBullet(b);
+        })))
+            .Then(new DisappearingPattern(30));
+        var firer = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "fireball.png"), new CircleCollider(15), firerPattern);
+        spawnBullet(firer);
+    };
+    var frammes = [];
+    for (var i = 1; i <= 4; i++) {
+        frammes.push(PIXI.Texture.fromImage('img/kraken/kr' + i + '.png'));
+    }
+    function fireDown() {
+        return new PeriodicPattern(60, function (octopus, pat) {
+            circular(45, 135, 2, function (xs, ys) {
+                var SPEED = 6;
+                var b = new Bullet(false, createBulletSprite(octopus.x(), octopus.y(), "orange.png"), new CircleCollider(10), new RepeatPattern(function () { return [
+                    new UniformMovementPattern(xs * SPEED, ys * SPEED).While(new FixedDuration(20)),
+                    new UniformMovementPattern(-xs * SPEED, ys * SPEED).While(new FixedDuration(20))
+                ]; }));
+                spawnBullet(b);
+            });
+        });
+    }
+    function summonKrakens(boss, whenUp) {
+        for (var i = 0; i < 6; i++) {
+            var krakenSprite = new PIXI.extras.AnimatedSprite(frammes);
+            krakenSprite.x = boss.x();
+            krakenSprite.y = boss.y();
+            krakenSprite.animationSpeed = 0.05;
+            krakenSprite.play();
+            krakenSprite.anchor.x = 0.5;
+            krakenSprite.anchor.y = 0.5;
+            var targetX = getRandomExclusive(40, WIDTH - 40);
+            var targetY = 30;
+            var en = new Enemy(krakenSprite, new RectangleCollider(30, 30), new SimpleMove(targetX - boss.x(), targetY - boss.y(), 60).
+                Then(whenUp.While(fireDown())));
+            en.hp = 1;
+            en.isBoss = false;
+            enemies.push(en);
+            addBulletToStage(en.sprite);
+        }
+    }
+    function krakenTop() {
+        return new OneShot(function (boss) {
+            summonKrakens(boss, new StandingPattern());
+        });
+    }
+    function krakenDescending() {
+        return new OneShot(function (boss) {
+            summonKrakens(boss, new UniformMovementPattern(0, 1));
+        });
+    }
+    function spawnPentagramBullet(x, y) {
+        var b = new Bullet(false, createBulletSprite(x, y, "orange.png"), new CircleCollider(10), new StandingPattern());
+        spawnBullet(b);
+        return b;
+    }
+    function spawnMazeBullet(x, y, xs, ys) {
+        var b = new Bullet(false, createBulletSprite(x, y, "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs, ys));
+        spawnBullet(b);
+        return b;
+    }
+    function partX(radius, angleRadians) {
+        return Math.cos(angleRadians) * radius;
+    }
+    function partY(radius, angleRadians) {
+        return Math.sin(angleRadians) * radius;
+    }
+    function drawPentagramLine(index, points) {
+        var bulletSpeed = 8;
+        return new FixedDuration(30).While(new OneShot(function (controller) { return controller.tags["i"] = 0; }).Then(new PeriodicPattern(0.5, function (controller, self) {
+            controller.tags["i"]++;
+            var xd = points[index + 1].x - points[index].x;
+            var yd = points[index + 1].y - points[index].y;
+            var lineBullet = spawnPentagramBullet(points[index].x + xd * controller.tags["i"] / 60, points[index].y + yd * controller.tags["i"] / 60);
+            lineBullet.tags["line"] = index + 1;
+            var n = normalize(xd, yd);
+            var on = new PIXI.Point(-n.y, n.x);
+            lineBullet.tags["xs"] = bulletSpeed * on.x;
+            lineBullet.tags["ys"] = bulletSpeed * on.y;
+        })));
+    }
+    function pentagram() {
+        var radius = 220;
+        var dr = radius / Math.sqrt(2);
+        var a = Math.PI * 2 / 5;
+        var points = [
+            new PIXI.Point(WIDTH / 2 + partX(radius, 0), HEIGHT / 2 + partY(radius, 0)),
+            new PIXI.Point(WIDTH / 2 + partX(radius, 2 * a), HEIGHT / 2 + partY(radius, 2 * a)),
+            new PIXI.Point(WIDTH / 2 + partX(radius, 4 * a), HEIGHT / 2 + partY(radius, 4 * a)),
+            new PIXI.Point(WIDTH / 2 + partX(radius, a), HEIGHT / 2 + partY(radius, a)),
+            new PIXI.Point(WIDTH / 2 + partX(radius, 3 * a), HEIGHT / 2 + partY(radius, 3 * a)),
+            new PIXI.Point(WIDTH / 2 + partX(radius, 0), HEIGHT / 2 + partY(radius, 0))
+        ];
+        return new OneShot(function (boss) {
+            var bulletSpeed = 8;
+            var controllerPattern = new PeriodicPattern(0.5, function (controller, self) {
+                controller.tags["angle"] = controller.getTag("angle") + Math.PI * 2 / 60;
+                var cBullet = spawnPentagramBullet(WIDTH / 2 + Math.cos(controller.tags["angle"]) * radius, HEIGHT / 2 + Math.sin(controller.tags["angle"]) * radius);
+                cBullet.tags["xs"] = Math.cos(controller.tags["angle"]) * bulletSpeed;
+                cBullet.tags["ys"] = Math.sin(controller.tags["angle"]) * bulletSpeed;
+                cBullet.tags["circle"] = 1;
+            }).While(new FixedDuration(30))
+                .Then(drawPentagramLine(0, points))
+                .Then(drawPentagramLine(1, points))
+                .Then(drawPentagramLine(2, points))
+                .Then(drawPentagramLine(3, points))
+                .Then(drawPentagramLine(4, points))
+                .Then(new FixedDuration(10))
+                .Then(new OneShot(function (controller) {
+                for (var _i = 0, bullets_3 = bullets; _i < bullets_3.length; _i++) {
+                    var b = bullets_3[_i];
+                    if (!b.harmless && b.getTag("circle") == 1) {
+                        b.tags["circle"] = 2;
+                        b.pattern = new UniformMovementPattern(b.tags["xs"], b.tags["ys"]);
+                    }
+                }
+            }))
+                .Then(new FixedDuration(30))
+                .Then(new OneShot(function (controller) {
+                for (var _i = 0, bullets_4 = bullets; _i < bullets_4.length; _i++) {
+                    var b = bullets_4[_i];
+                    if (!b.harmless && b.getTag("line") >= 1) {
+                        b.tags["line"] = -1;
+                        b.pattern = new UniformMovementPattern(b.tags["xs"], b.tags["ys"]);
+                    }
+                }
+            }));
+            var controller = new Bullet(false, new PIXI.Container(), new CircleCollider(0), controllerPattern);
+            controller.tags["x"] = WIDTH / 2 - dr;
+            controller.tags["y"] = HEIGHT / 2 + dr;
+            controller.tags["sx"] = WIDTH / 2 - dr;
+            controller.tags["sy"] = HEIGHT / 2 + dr;
+            controller.tags["angle"] = Math.PI * 3 / 4;
+            controller.harmless = true;
+            spawnBullet(controller);
+        }).Then(new FixedDuration(60));
+    }
+    function fourFirers() {
+        return new OneShot(function (boss) {
+            for (var i = 0; i < 10; i++) {
+                fireFirer(boss);
+            }
+        });
+    }
+    function singleExCircle() {
+        return new OneShot(function (boss) {
+            circular(0, 360, 20, function (xs, ys, rot) {
+                var SPEED = 8;
+                var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
+                spawnBullet(b);
+            });
+        });
+    }
+    function expandingCircle() {
+        return singleExCircle().Then(new FixedDuration(20)).Then(singleExCircle());
+    }
+    function starpoint() {
+        return new SequencePattern([
+            expandingCircle(),
+            new RandomPattern([
+                krakenTop(),
+                krakenDescending(),
+                pentagram(),
+                pentagram(),
+                fourFirers(),
+                fourFirers()
+            ]),
+            new FixedDuration(40)
+        ]);
+    }
+    function makeMazeLevel(boss, level) {
+        var BULLETCOUNT = 60;
+        var SPEED = 1.2;
+        for (var i = 0; i < BULLETCOUNT; i++) {
+            var degrees = 180 + 45 + (i * 90 / BULLETCOUNT);
+            var x = Math.cos(degreesToRadian(degrees)) / Math.cos(degreesToRadian(45)) * SPEED;
+            var y = SPEED;
+            if (level != 1 || i < BULLETCOUNT / 5 || i > BULLETCOUNT * 2 / 5) {
+                if (level != 2 || i < BULLETCOUNT * 3 / 5 || i > BULLETCOUNT * 4 / 5) {
+                    if (level != 4 || i < BULLETCOUNT * 2 / 5 || i > BULLETCOUNT * 3 / 5) {
+                        var b = spawnMazeBullet(boss.x(), boss.y(), x, -y);
+                    }
+                }
+            }
+            var b = spawnMazeBullet(boss.x(), boss.y(), x, y);
+        }
+        for (var i = 0; i < BULLETCOUNT; i++) {
+            var degrees = 180 + 45 + (i * 90 / BULLETCOUNT);
+            var y = Math.cos(degreesToRadian(degrees)) / Math.cos(degreesToRadian(45)) * SPEED;
+            var x = SPEED;
+            if (level != 3 || i < BULLETCOUNT * 3 / 5 || i > BULLETCOUNT * 4 / 5) {
+                var b = spawnMazeBullet(boss.x(), boss.y(), x, y);
+            }
+            var b = spawnMazeBullet(boss.x(), boss.y(), -x, y);
+        }
+    }
+    function maze() {
+        var MAZE_TIME = 120;
+        return new OneShot(function (boss) {
+            makeMazeLevel(boss, 1);
+        }).Then(new FixedDuration(MAZE_TIME))
+            .Then(new OneShot(function (boss) {
+            makeMazeLevel(boss, 2);
+        }))
+            .Then(new FixedDuration(MAZE_TIME))
+            .Then(new OneShot(function (boss) {
+            makeMazeLevel(boss, 3);
+        }))
+            .Then(new FixedDuration(MAZE_TIME))
+            .Then(new OneShot(function (boss) {
+            makeMazeLevel(boss, 4);
+        }))
+            .Then(new FixedDuration(MAZE_TIME))
+            .Then(new OneShot(function (boss) {
+            circular(0, 360, 20, function (xs, ys) {
+                var SPD = 4;
+                var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPD, ys * SPD));
+                spawnBullet(b);
+            });
+        }))
+            .Then(new FixedDuration(MAZE_TIME));
+    }
     function main() {
         return new CombinationPattern([
-            new RotationPattern(60, function (angle, delta, boss) {
+            new RotationPattern(360, function (angle, delta, boss) {
                 boss.sprite.rotation = angle;
             }),
-            new RepeatPattern(function () { return []; })
+            new RepeatPattern(function () { return [
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 270, 180, 320),
+                starpoint(),
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 180, 90, 150),
+                expandingCircle(),
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 90, 0, 150),
+                starpoint(),
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 0, -90, 320),
+                new SimpleMove(0, 288, 80),
+                maze(),
+                new SimpleMove(0, -288, 80),
+            ]; })
         ]);
     }
     Portal.main = main;
@@ -1950,21 +2236,31 @@ var Player = (function (_super) {
         _this.fireDelay = 0;
         var texture = PIXI.Texture.fromImage('img/ship.png');
         var playerSprite = new PIXI.Sprite(texture);
+        var container = new PIXI.Container();
         playerSprite.anchor.x = 0.5;
-        stage.addChild(playerSprite);
         playerSprite.anchor.y = 0.65;
-        playerSprite.x = WIDTH / 2;
+        playerSprite.x = 0;
+        playerSprite.y = 0;
+        container.x = WIDTH / 2;
         if (doIntro) {
-            playerSprite.y = HEIGHT * 5 / 4;
+            container.y = HEIGHT * 5 / 4;
             _this.controllable = false;
             _this.pattern = new SimpleMove(0, -HEIGHT * 2 / 4, INTRO_TIME).Then(new OneShot(function (self) { return _this.controllable = true; }));
         }
         else {
-            playerSprite.y = HEIGHT * 3 / 4;
+            container.y = HEIGHT * 3 / 4;
         }
         playerSprite.width = 64;
         playerSprite.height = 64;
-        _this.sprite = playerSprite;
+        var center = new PIXI.Graphics();
+        center.lineStyle(2, Colors.GrassGreen);
+        center.beginFill(0xFFFFFF);
+        center.drawCircle(0, 0, 4);
+        center.endFill();
+        container.addChild(playerSprite);
+        container.addChild(center);
+        stage.addChild(container);
+        _this.sprite = container;
         return _this;
     }
     Player.prototype.loseHP = function (damage) {

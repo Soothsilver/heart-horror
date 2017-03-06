@@ -159,6 +159,7 @@ function spawnBosses(level : number, doIntro : boolean) {
 
     var boss: Enemy = Levels.getLevel(level).bossCreation();
     if (doIntro) {
+        var originalY = boss.sprite.y;
         boss.sprite.y = - HEIGHT * 3 / 5;
         boss.pattern = new SequencePattern([
             new OneShot(() => {
