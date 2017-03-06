@@ -204,7 +204,7 @@ namespace Portal {
         });
     }
     function expandingCircle(): Pattern {
-        return singleExCircle().Then(new FixedDuration(20)).Then(singleExCircle());
+        return singleExCircle().Then(new FixedDuration(20).Named("...")).Then(singleExCircle());
     }
     function starpoint(): Pattern {
         return new SequencePattern([
@@ -282,7 +282,7 @@ namespace Portal {
         return new CombinationPattern([
             new RotationPattern(360, (angle, delta, boss) => {
                 boss.sprite.rotation = angle;
-            }),
+            }).Named("48 65 6c 6c 6f"),
             /*
             new SequencePattern([
             new SimpleMove(0, 288, 120),
@@ -291,17 +291,17 @@ namespace Portal {
             //pentagram()
             
             new RepeatPattern(() => [
-                
-                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 270, 180, 320),
-                starpoint(),
-                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 180, 90, 150),
+
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 270, 180, 320).Named("49 20 6c 6f 76 65 20 79 6f 75"),
+                starpoint().Named("..."),
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 180, 90, 150).Named("49 20 77 61 6e 74 20 66 72 69 65 6e 64 73 68 69 70 2e"),
                 expandingCircle(),
-                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 90, 0, 150),
-                starpoint(),
-                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 0, -90, 320),
-                new SimpleMove(0, 288, 80),
-                maze(),
-                new SimpleMove(0, -288, 80),
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 90, 0, 150).Named("46 72 69 65 6e 64 21"),
+                starpoint().Named("..."),
+                new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 0, -90, 320).Named("49 20 61 6d 20 72 65 6e 65 67 61 64 65 2e"),
+                new SimpleMove(0, 288, 80).Named("45 6e 74 65 72 20 74 68 65 20 6d 61 7a 65"),
+                maze().Named("53 4f 52 52 59 21"),
+                new SimpleMove(0, -288, 80).Named("53 6f 72 72 79"),
                 
                 ])
         ]);

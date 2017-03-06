@@ -94,22 +94,22 @@ namespace TentacleBoss {
             
             new RepeatPattern(() => [
                 new OneShot(throwSplittingBalls),
-                new SimpleMove(0, 100, 60).Named("'I spit death, puny human!'")
+                new SimpleMove(0, 100, 60).Named("'I only accept the best of souls!'")
             ], 3),
             new RepeatPattern(() => [
                 new OneShot(throwSplittingBalls),
-                new SimpleMove(0, -100, 60).Named("'I spit death, puny human!'")
+                new SimpleMove(0, -100, 60).Named("'I only accept the best of souls!'")
             ], 3),
-            new FixedDuration(90).Named("'Phew. That was tough.'"),
+            new FixedDuration(90).Named("'Have you consider GigaSoulMarket, human? I hear they have a sale.'"),
             new RepeatPattern(() => [
                 new CustomPattern((boss) => {
                     return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 40)
                 }),
                 new FixedDuration(30)
-            ], 5).Named("'Stop running, human!'"),
+            ], 5).Named("'Sometimes they call me the Soulmand.'"),
             new CustomPattern((boss) => {
                 return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60)
-            }).Named("'Ha-ha. Get ready for something big!'"),
+            }).Named("'Is your soul ready to be in my belly?'"),
             star().Named("'Super Star Mega Sweep!! Muhahahaha!'"),
             new SpecialPattern((delta, item, pattern) => {
                 var xd = player.x() - item.x();
@@ -119,7 +119,7 @@ namespace TentacleBoss {
                 item.sprite.x += p.x * speed * delta;
                 item.sprite.y += p.y * speed * delta
 
-            }).While(new FixedDuration(120)).Named("'You cannot escape, human!'"),
+            }).While(new FixedDuration(120)).Named("'Why are you running?! I am not going to do \"hentai stuff\".'"),
             new CustomPattern((boss) => {
                 return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60)
             }).Named("'Heh. Now you'll see a \"nuke\".'"),
