@@ -164,9 +164,9 @@ function reset() {
     animatedEntities = [];
     if (loadedLevel >= 0) {
         player = new Player(doIntro);
+        numberOfBossesRemaining = 1;
         spawnBosses(loadedLevel, doIntro);
         gameEnded = false;
-        numberOfBossesRemaining = 1;
         playerBar = new PlayerBar();
         dateOfStart = new Date();
         basicText = new PIXI.Text("FPS: ?");
@@ -205,6 +205,12 @@ function reset() {
 }
 function spawnBosses(level, doIntro) {
     var boss = Levels.getLevel(level).bossCreation();
+    var boss2 = null;
+    var double = Levels.getLevel(level).isDoubleBoss;
+    if (double) {
+        boss2 = Levels.getLevel(level).bossCreation2();
+        numberOfBossesRemaining = 2;
+    }
     if (doIntro) {
         var originalY = boss.sprite.y;
         boss.sprite.y = -HEIGHT * 3 / 5;
@@ -247,9 +253,24 @@ function spawnBosses(level, doIntro) {
             new FixedDuration(INTRO_TIME * 1 / 4).Named("Get ready!"),
             boss.pattern
         ]);
+        if (double) {
+            var originalY = boss2.sprite.y;
+            boss2.sprite.y = -HEIGHT * 3 / 5;
+            boss2.pattern = new SequencePattern([
+                new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4).Named("Boss enters the stage!"),
+                new FixedDuration(INTRO_TIME * 1 / 4).Named("Get ready!"),
+                boss2.pattern
+            ]);
+        }
     }
     stage.addChild(boss.sprite);
-    enemies = [boss];
+    if (double) {
+        stage.addChild(boss2.sprite);
+        enemies = [boss, boss2];
+    }
+    else {
+        enemies = [boss];
+    }
 }
 var WIDTH = 1280;
 var HEIGHT = 720;
@@ -262,7 +283,7 @@ renderer.render(stage);
 $(document).ready(function () {
     document.getElementById("viewport").appendChild(renderer.view);
     loadLocalStorage();
-    startLevel(Levels.MysteriousPortal);
+    startLevel(Levels.DeepEyes);
 });
 var playerBar;
 var basicText;
@@ -304,7 +325,7 @@ var difficulty = 3;
 ticker.add(function (delta) {
     if (basicText != null) {
         basicText.text = "Difficulty: " + difficultyToString(difficulty) +
-            "\nBoss: " + (enemies.length > 0 ? enemies[0].pattern.explain() : "");
+            "\n" + (enemies.length > 0 ? ("Boss: " + enemies[0].pattern.explain()) : "");
     }
     if (player != null) {
         if (player.controllable) {
@@ -428,8 +449,10 @@ var LifeBar = (function () {
 }());
 var BossBar = (function (_super) {
     __extends(BossBar, _super);
-    function BossBar(maxhp) {
-        return _super.call(this, "Boss", Colors.YellowOrange, maxhp, 50) || this;
+    function BossBar(maxhp, name, y) {
+        if (name === void 0) { name = "Boss"; }
+        if (y === void 0) { y = 50; }
+        return _super.call(this, name, Colors.YellowOrange, maxhp, y) || this;
     }
     return BossBar;
 }(LifeBar));
@@ -848,8 +871,14 @@ function openLevel(level) {
     unpause();
 }
 function fastReset() {
+    if (menuOpen) {
+        unpause();
+    }
     doIntro = false;
     reset();
+    if (menuOpen) {
+        pause();
+    }
 }
 function changeSkipConfirmation() {
     var skip = $('#skipConfirmation').is(":checked");
@@ -884,6 +913,8 @@ function unpause() {
     }
 }
 function togglePause() {
+    if (menuOpen)
+        return;
     if (paused) {
         unpause();
     }
@@ -1109,7 +1140,10 @@ var Levels = (function () {
             case Levels.CommandVessel:
                 return new LevelDescription("Command Vessel", "Behold the leader of the Vast Horrors!", createCommandVessel);
             case Levels.DeepEyes:
-                return new LevelDescription("Deep Eyes", "Piece of cake, maybe?", createDeepEyes);
+                var eyes = new LevelDescription("Deep Eyes", "Piece of cake, maybe?", createDeepEyes);
+                eyes.isDoubleBoss = true;
+                eyes.bossCreation2 = createDeepEyes2;
+                return eyes;
             case Levels.DeepEye:
             default:
                 return new LevelDescription("Deep Eye", "Vanguard of the Vast Horrors", createEyeBossBoss);
@@ -1676,23 +1710,187 @@ var CommandVessel;
     CommandVessel.main = main;
 })(CommandVessel || (CommandVessel = {}));
 function createDeepEyes() {
-    var enemySprite = PIXI.Sprite.fromImage("img/boss/octopus.png");
-    enemySprite.x = WIDTH / 2;
+    var frammes = [];
+    for (var i = 0; i < 8; i++) {
+        frammes.push(PIXI.Texture.fromImage('img/eye/eye' + i + '.png'));
+    }
+    var enemySprite = new PIXI.extras.AnimatedSprite(frammes);
+    enemySprite.x = WIDTH * 1 / 4;
     enemySprite.y = HEIGHT * 1 / 5;
     enemySprite.anchor.x = 0.5;
     enemySprite.anchor.y = 0.5;
-    var boss = new Enemy(enemySprite, new RectangleCollider(181, 136), DeepEyes.main());
-    boss.hp = 800;
+    enemySprite.animationSpeed = 0.2;
+    enemySprite.play();
+    animatedEntities.push(enemySprite);
+    var boss = new Enemy(enemySprite, new CircleCollider(143), DeepEyes.left());
+    boss.hp = 400;
     boss.isBoss = true;
-    boss.bossbar = new BossBar(boss.hp);
+    boss.bossbar = new BossBar(boss.hp, "Left Eye", 50);
+    return boss;
+}
+function createDeepEyes2() {
+    var frammes = [];
+    for (var i = 0; i < 8; i++) {
+        frammes.push(PIXI.Texture.fromImage('img/eye/eye' + i + '.png'));
+    }
+    var enemySprite = new PIXI.extras.AnimatedSprite(frammes);
+    enemySprite.x = WIDTH * 3 / 4;
+    enemySprite.y = HEIGHT * 1 / 5;
+    enemySprite.anchor.x = 0.5;
+    enemySprite.anchor.y = 0.5;
+    enemySprite.animationSpeed = 0.2;
+    enemySprite.play();
+    animatedEntities.push(enemySprite);
+    var boss = new Enemy(enemySprite, new CircleCollider(143), DeepEyes.right());
+    boss.hp = 400;
+    boss.isBoss = true;
+    boss.bossbar = new BossBar(boss.hp, "Right Eye", 90);
     return boss;
 }
 var DeepEyes;
 (function (DeepEyes) {
-    function main() {
-        return new StandingPattern();
+    function left() {
+        return createEyeBoss(true);
     }
-    DeepEyes.main = main;
+    DeepEyes.left = left;
+    function right() {
+        return createEyeBoss(false);
+    }
+    DeepEyes.right = right;
+    function createEyeBoss(left) {
+        var bossMovement;
+        if (left) {
+            bossMovement = new SequencePattern([
+                new RepeatPattern(function () { return [
+                    new RepeatPattern(function () {
+                        return [
+                            new FixedDuration(120).While(shooting).While(rotating).Named("Full Rotation Eye Cannon"),
+                            new SimpleMove(400, 0, 100).While(atPlayer).Named("Sweep"),
+                            new FixedDuration(30).While(shooting2).Named("Discharge"),
+                            new SimpleMove(-400, 0, 200).While(atPlayer).Named("Sweep"),
+                            new FixedDuration(30).While(shooting2).Named("Discharge"),
+                        ];
+                    }, 1),
+                    new SequencePattern([
+                        new SequencePattern([
+                            new SimpleMove(0, 200, 50).Named("Prime Explosive Eyes"),
+                            new OneShot(fireBombs),
+                            new SimpleMove(0, -200, 50).Named("Explosive Eyes"),
+                        ]),
+                        new SequencePattern([
+                            new SimpleMove(-200, 200, 100).Named("Prime Laser"),
+                            new OneShot(function (boss) {
+                                var laserSprite = createBulletSprite(boss.x(), boss.y() + 300, "blueLaser.png");
+                                laserSprite.scale.y = 7;
+                                var bb = new Bullet(false, laserSprite, new RectangleCollider(laserSprite.width, laserSprite.height), new FollowLeaderX(boss).While(new FixedDuration(500)).Then(new OneShot(function (laser) { return laser.gone = true; })));
+                                bb.indestructible = true;
+                                spawnBullet(bb);
+                            }),
+                            new SimpleMove(1000, 0, 500).While(atPlayer).Named("Laser Sweep"),
+                            new SimpleMove(-800, -200, 100).Named("Recover Self"),
+                        ])
+                    ])
+                ]; })
+            ]);
+        }
+        else {
+            bossMovement = new SequencePattern([
+                new RepeatPattern(function () { return [
+                    new RepeatPattern(function () {
+                        return [
+                            new FixedDuration(120).While(shooting).While(rotating).Named("Full Rotation Eye Cannon"),
+                            new SimpleMove(-400, 0, 100).While(atPlayer).Named("Sweep"),
+                            new FixedDuration(30).While(shooting2).Named("Discharge"),
+                            new SimpleMove(400, 0, 200).While(atPlayer).Named("Sweep"),
+                            new FixedDuration(30).While(shooting2).Named("Discharge"),
+                        ];
+                    }, 1),
+                    new SequencePattern([
+                        new SequencePattern([
+                            new SimpleMove(0, 200, 50).Named("Prime Explosive Eyes"),
+                            new OneShot(fireBombs),
+                            new SimpleMove(0, -200, 50).Named("Explosive Eyes"),
+                        ]),
+                        new SequencePattern([
+                            new SimpleMove(200, 200, 100).Named("Prime Laser"),
+                            new OneShot(function (boss) {
+                                var laserSprite = createBulletSprite(boss.x(), boss.y() + 300, "blueLaser.png");
+                                laserSprite.scale.y = 7;
+                                var bb = new Bullet(false, laserSprite, new RectangleCollider(laserSprite.width, laserSprite.height), new FollowLeaderX(boss).While(new FixedDuration(500)).Then(new OneShot(function (laser) { return laser.gone = true; })));
+                                bb.indestructible = true;
+                                spawnBullet(bb);
+                            }),
+                            new SimpleMove(-1000, 0, 500).While(atPlayer).Named("Laser Sweep"),
+                            new SimpleMove(800, -200, 100).Named("Recover Self"),
+                        ])
+                    ])
+                ]; })
+            ]);
+        }
+        function fireBombs(boss) {
+            for (var i = 0; i < 5; i++) {
+                var bomb = createBulletSprite(boss.x(), boss.y(), "bomb.png");
+                var SPEED = 8;
+                var rotation = Math.PI * i / 4;
+                var xs = SPEED * 0.5 * Math.cos(rotation);
+                var ys = SPEED * 0.5 * Math.sin(rotation);
+                var bombPattern = new SequencePattern([
+                    new UniformMovementPattern(xs, ys).While(new FixedDuration(120)),
+                    new OneShot(function (bomb) {
+                        bomb.gone = true;
+                        for (var i = 0; i < 10; i++) {
+                            var rotation = 2 * Math.PI * i / 10;
+                            var xs = SPEED * 0.7 * 0.5 * Math.cos(rotation);
+                            var ys = SPEED * 0.7 * 0.5 * Math.sin(rotation);
+                            var smll = createBulletSprite(bomb.x(), bomb.y(), "yellowBubble.png");
+                            var bs = new Bullet(false, smll, new CircleCollider(5), new SequencePattern([
+                                new UniformMovementPattern(xs, ys).While(new FixedDuration(60)),
+                                new UniformMovementPattern(xs, ys).While(new DisappearingPattern(10))
+                            ]));
+                            spawnBullet(bs);
+                        }
+                    })
+                ]);
+                var b = new Bullet(false, bomb, new CircleCollider(16), bombPattern);
+                spawnBullet(b);
+            }
+        }
+        var rotating = new RotationPattern(24, function (angle, delta, item) {
+            item.tags["rot"] = angle;
+        });
+        var atPlayer = new PeriodicPattern(16, function (boss) {
+            var BULLET_SPEED = 10;
+            var dx = (player.x() - boss.x());
+            var dy = (player.y() - boss.y());
+            var total = Math.sqrt(dx * dx + dy * dy);
+            var xs = BULLET_SPEED * dx / total;
+            var ys = BULLET_SPEED * dy / total;
+            console.log('a');
+            var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
+            spawnBullet(b);
+        });
+        var shooting2 = new PeriodicPattern(18, function (item) {
+            for (var i = 0; i < 10; i++) {
+                var bs = createBulletSprite(item.sprite.x, item.sprite.y, "blueOrb.png");
+                var SPEED = 5;
+                var rotation = Math.PI * i / 10;
+                var xs = SPEED * 0.5 * Math.cos(rotation);
+                var ys = SPEED * 0.5 * Math.sin(rotation);
+                var b = new Bullet(false, bs, new CircleCollider(9), new UniformMovementPattern(xs, ys));
+                spawnBullet(b);
+            }
+        });
+        var shooting = new PeriodicPattern(1, function (item, pattern) {
+            var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
+            var SPEED = 5;
+            var xs = SPEED * Math.cos(item.tags["rot"] + pattern.getTag("slowdown"));
+            var ys = SPEED * Math.sin(item.tags["rot"] + pattern.getTag("slowdown"));
+            pattern.tags["slowdown"] = pattern.getTag("slowdown") + 0.02;
+            var b = new Bullet(false, bs, new CircleCollider(5), new UniformMovementPattern(xs, ys));
+            spawnBullet(b);
+        });
+        return bossMovement;
+    }
 })(DeepEyes || (DeepEyes = {}));
 function createEyeBossBoss() {
     var frammes = [];
@@ -1955,7 +2153,7 @@ var Portal;
                 .Then(new OneShot(function (controller) {
                 for (var _i = 0, bullets_3 = bullets; _i < bullets_3.length; _i++) {
                     var b = bullets_3[_i];
-                    if (!b.harmless && b.getTag("circle") == 1) {
+                    if (b.getTag("circle") == 1) {
                         b.tags["circle"] = 2;
                         b.pattern = new UniformMovementPattern(b.tags["xs"], b.tags["ys"]);
                     }
@@ -1965,7 +2163,7 @@ var Portal;
                 .Then(new OneShot(function (controller) {
                 for (var _i = 0, bullets_4 = bullets; _i < bullets_4.length; _i++) {
                     var b = bullets_4[_i];
-                    if (!b.harmless && b.getTag("line") >= 1) {
+                    if (b.getTag("line") >= 1) {
                         b.tags["line"] = -1;
                         b.pattern = new UniformMovementPattern(b.tags["xs"], b.tags["ys"]);
                     }
@@ -2176,7 +2374,7 @@ var TentacleBoss;
                 new OneShot(throwSplittingBalls),
                 new SimpleMove(0, -100, 60).Named("'I spit death, puny human!'")
             ]; }, 3),
-            new FixedDuration(30).Named("'Phew. That was tough.'"),
+            new FixedDuration(90).Named("'Phew. That was tough.'"),
             new RepeatPattern(function () { return [
                 new CustomPattern(function (boss) {
                     return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 40);
@@ -2327,7 +2525,9 @@ var skipIntro = false;
 var pauseWhenClickOut = true;
 function changeDifficulty() {
     difficulty = parseInt($("#difficulty").val());
-    stage.removeChildren();
+    unpause();
+    reset();
+    pause();
     window.localStorage.setItem("difficulty", difficulty.toString());
 }
 function loadLocalStorage() {

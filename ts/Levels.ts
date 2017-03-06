@@ -3,6 +3,8 @@ class LevelDescription {
     public bossname: string;
     public subCaption: string;
     public bossCreation: () => Enemy;
+    public bossCreation2: () => Enemy;
+    public isDoubleBoss: boolean;
     public constructor(name: string, desc: string, makeBoss: ()=>Enemy) {
         this.bossname = name;
         this.subCaption = desc;
@@ -28,7 +30,10 @@ class Levels {
             case Levels.CommandVessel:
                 return new LevelDescription("Command Vessel", "Behold the leader of the Vast Horrors!", createCommandVessel);
             case Levels.DeepEyes:
-                return new LevelDescription("Deep Eyes", "Piece of cake, maybe?", createDeepEyes);
+                var eyes = new LevelDescription("Deep Eyes", "Piece of cake, maybe?", createDeepEyes);
+                eyes.isDoubleBoss = true;
+                eyes.bossCreation2 = createDeepEyes2;
+                return eyes;
             case Levels.DeepEye:
             default:
                 return new LevelDescription("Deep Eye", "Vanguard of the Vast Horrors", createEyeBossBoss);

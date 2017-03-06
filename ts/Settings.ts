@@ -10,8 +10,9 @@ var pauseWhenClickOut: boolean = true;
 
 function changeDifficulty() {
     difficulty = parseInt($("#difficulty").val());
-    stage.removeChildren();
-    // TODO
+    unpause();
+    reset();
+    pause();
     window.localStorage.setItem("difficulty", difficulty.toString());
 }
 function loadLocalStorage() {

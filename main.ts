@@ -11,8 +11,8 @@ renderer.render(stage);
 $(document).ready(() => {
     document.getElementById("viewport").appendChild(renderer.view);
     loadLocalStorage();
-    // openMenu();
-    startLevel(Levels.MysteriousPortal);
+    //openMenu();
+    startLevel(Levels.DeepEyes);
 });
  
 
@@ -61,7 +61,7 @@ var difficulty: number = 3;
 ticker.add(function (delta) {
     if (basicText != null) {
         basicText.text = "Difficulty: " + difficultyToString(difficulty) +
-            "\nBoss: " + (enemies.length > 0 ? enemies[0].pattern.explain() : "");
+            "\n" + (enemies.length > 0 ?  ( "Boss: " +  enemies[0].pattern.explain() ) : "");
     }
     if (player != null) {
         if (player.controllable) {

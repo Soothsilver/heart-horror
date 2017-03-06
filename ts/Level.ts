@@ -110,9 +110,9 @@ function reset() {
     animatedEntities = [];
     if (loadedLevel >= 0) {
         player = new Player(doIntro);
+        numberOfBossesRemaining = 1;
         spawnBosses(loadedLevel, doIntro);
         gameEnded = false;
-        numberOfBossesRemaining = 1;
         playerBar = new PlayerBar();
         dateOfStart = new Date();
         // FPS    
@@ -158,6 +158,12 @@ function reset() {
 function spawnBosses(level : number, doIntro : boolean) {
 
     var boss: Enemy = Levels.getLevel(level).bossCreation();
+    var boss2: Enemy = null;
+    var double = Levels.getLevel(level).isDoubleBoss;
+    if (double) {
+        boss2 = Levels.getLevel(level).bossCreation2();
+        numberOfBossesRemaining = 2;
+    }
     if (doIntro) {
         var originalY = boss.sprite.y;
         boss.sprite.y = - HEIGHT * 3 / 5;
@@ -202,7 +208,22 @@ function spawnBosses(level : number, doIntro : boolean) {
             new FixedDuration(INTRO_TIME * 1 / 4).Named("Get ready!"),
             boss.pattern
         ]);
+        if (double) {
+            var originalY = boss2.sprite.y;
+            boss2.sprite.y = - HEIGHT * 3 / 5;
+            boss2.pattern = new SequencePattern([
+                new SimpleMove(0, HEIGHT * 4 / 5, INTRO_TIME * 3 / 4).Named("Boss enters the stage!"),
+                new FixedDuration(INTRO_TIME * 1 / 4).Named("Get ready!"),
+                boss2.pattern
+            ]);
+        }
     }
     stage.addChild(boss.sprite);
-    enemies = [boss];
+    if (double) {
+        stage.addChild(boss2.sprite);
+        enemies = [boss, boss2];
+    }
+    else {
+        enemies = [boss];
+    }
 }

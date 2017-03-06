@@ -100,7 +100,7 @@ namespace TentacleBoss {
                 new OneShot(throwSplittingBalls),
                 new SimpleMove(0, -100, 60).Named("'I spit death, puny human!'")
             ], 3),
-            new FixedDuration(30).Named("'Phew. That was tough.'"),
+            new FixedDuration(90).Named("'Phew. That was tough.'"),
             new RepeatPattern(() => [
                 new CustomPattern((boss) => {
                     return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 40)

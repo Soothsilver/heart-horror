@@ -161,7 +161,7 @@ namespace Portal {
                 .Then(new FixedDuration(10))
                 .Then(new OneShot((controller) => {
                     for (var b of bullets) {
-                        if (!b.harmless && b.getTag("circle") == 1) {
+                        if (b.getTag("circle") == 1) {
                             b.tags["circle"] = 2;
                             b.pattern = new UniformMovementPattern(b.tags["xs"], b.tags["ys"]);
                         }
@@ -170,7 +170,7 @@ namespace Portal {
                 .Then(new FixedDuration(30))
                 .Then(new OneShot((controller) => {
                     for (var b of bullets) {
-                        if (!b.harmless && b.getTag("line") >= 1) {
+                        if (b.getTag("line") >= 1) {
                             b.tags["line"] = -1;
                             b.pattern = new UniformMovementPattern(b.tags["xs"], b.tags["ys"]);
                         }

@@ -25,8 +25,15 @@ function openLevel(level: number) {
     unpause();
 }
 function fastReset() {
+    if (menuOpen) {
+        unpause();
+    }
     doIntro = false;
     reset();
+
+    if (menuOpen) {
+        pause();
+    }
 }
 function changeSkipConfirmation() {
     var skip = $('#skipConfirmation').is(":checked");
@@ -59,6 +66,7 @@ function unpause() {
     }
 }
 function togglePause() {
+    if (menuOpen) return;
     if (paused) {
         unpause();
     } else {

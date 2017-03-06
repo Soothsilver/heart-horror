@@ -85,7 +85,6 @@ function createEyeBoss(): Pattern {
     var rotating = new RotationPattern(24, (angle, delta, item) => {
         item.tags["rot"] = angle;
     });
-
     var atPlayer = new PeriodicPattern(16, (boss) => {
         var BULLET_SPEED = 10;
         var dx = (player.x() - boss.x());
@@ -108,7 +107,6 @@ function createEyeBoss(): Pattern {
             spawnBullet(b);
         }
     });
-
     var shooting = new PeriodicPattern(1, (item, pattern) => {
         var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
         var SPEED = 5;
