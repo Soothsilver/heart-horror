@@ -14,7 +14,9 @@
             key.isUp = false;
         }
         if (event.keyCode != 80 && event.keyCode != 19 && event.keyCode != 27) {
-            unpause();
+            if (!menuOpen) {
+                unpause();
+            }
         }
         event.preventDefault();
     };
@@ -41,7 +43,7 @@
 }
 var buttons = {
     
-    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27, 70],
+    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27, 70, 77],
     left: keyboard(37),
     right: keyboard(39),
     down: keyboard(40),
@@ -56,5 +58,6 @@ var buttons = {
     p: keyboard(80),
     pause: keyboard(19),
     esc: keyboard(27),
-    f: keyboard(70)
+    f: keyboard(70),
+    m: keyboard(77)
 };

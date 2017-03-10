@@ -35,7 +35,7 @@ function reloadAccessibleLevels() {
     if (isNaN(n)) {
         openLevelsUpTo(-1);
     } else {
-        openLevelsUpTo(n);
+        openLevelsUpTo(n-1);
     }
 }
 
@@ -46,8 +46,6 @@ var DIFFICULTY_HARD = 4;
 var DIFFICULTY_FRUSTRATING = 5;
 function reloadDifficulty() {
     difficulty = parseInt(window.localStorage.getItem("difficulty"));
-    console.log("D");
-    console.log(difficulty);
     if (isNaN(difficulty)) {
         difficulty = DIFFICULTY_NORMAL;
         console.log(difficulty);
@@ -154,6 +152,7 @@ function reset() {
         pauseText2.y = HEIGHT / 2 + 35;
         pauseScreen.addChild(pauseText2);
     }
+    resumeMusic();
 }
 function spawnBosses(level : number, doIntro : boolean) {
 

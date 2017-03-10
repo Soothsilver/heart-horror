@@ -29,7 +29,7 @@ namespace Portal {
                 firer.tags["xs"] = xs;
                 firer.tags["ys"] = ys;
             }))
-            .Then(new FixedDuration(60).While(new PeriodicPattern(4,
+            .Then(new FixedDuration(dif(30,60,70)).While(new PeriodicPattern(4,
                 (firer) => {
                     var xs = firer.tags["xs"];
                     var ys = firer.tags["ys"];
@@ -45,7 +45,7 @@ namespace Portal {
         frammes.push(PIXI.Texture.fromImage('img/kraken/kr' + i + '.png'));
     }
     function fireDown() {
-        return new PeriodicPattern(60, (octopus, pat) => {
+        return new PeriodicPattern(dif(180,60,45), (octopus, pat) => {
             circular(45, 135, 2, (xs, ys) => {
                 var SPEED = 6;
                 var b = new Bullet(false, createBulletSprite(octopus.x(), octopus.y(), "orange.png"), new CircleCollider(10),
@@ -60,7 +60,7 @@ namespace Portal {
     }
     function summonKrakens(boss : Item, whenUp: Pattern) {
 
-        for (var i = 0; i < 6; i++) {
+        for (var i = 0; i < dif(4,6,10); i++) {
             var krakenSprite = new PIXI.extras.AnimatedSprite(frammes);
             krakenSprite.x = boss.x();
             krakenSprite.y = boss.y();
@@ -144,7 +144,7 @@ namespace Portal {
 
         ];
         return new OneShot((boss) => {
-            var bulletSpeed = 8;
+            var bulletSpeed = dif(3,8,10);
             var controllerPattern = new PeriodicPattern(0.5, (controller, self) => {
                 controller.tags["angle"] = controller.getTag("angle") + Math.PI * 2 / 60;
                 var cBullet = spawnPentagramBullet(WIDTH / 2 + Math.cos(controller.tags["angle"]) * radius,
@@ -188,7 +188,7 @@ namespace Portal {
     }
     function fourFirers(): Pattern {
         return new OneShot((boss) => {
-            for (var i = 0; i < 10; i++) {
+            for (var i = 0; i < dif(5, 10, 20); i++) {
                 fireFirer(boss);
             }
         });
@@ -196,8 +196,8 @@ namespace Portal {
     }
     function singleExCircle(): Pattern {
         return new OneShot((boss) => {
-            circular(0, 360, 20, (xs, ys, rot) => {
-                var SPEED = 8;
+            circular(0, 360, dif(10,20,25), (xs, ys, rot) => {
+                var SPEED = dif(8,8,12);
                 var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
                 spawnBullet(b);
             });
@@ -249,7 +249,7 @@ namespace Portal {
         }
     }
     function maze(): Pattern {
-        var MAZE_TIME = 120;
+        var MAZE_TIME = dif(180,120,100);
         return new OneShot((boss) => {
             makeMazeLevel(boss, 1);
         }).Then(
@@ -282,14 +282,7 @@ namespace Portal {
         return new CombinationPattern([
             new RotationPattern(360, (angle, delta, boss) => {
                 boss.sprite.rotation = angle;
-            }).Named("48 65 6c 6c 6f"),
-            /*
-            new SequencePattern([
-            new SimpleMove(0, 288, 120),
-            maze(),
-            new SimpleMove(0, -288, 120)])*/
-            //pentagram()
-            
+            }).Named("48 65 6c 6c 6f"),            
             new RepeatPattern(() => [
 
                 new EllipseMovement(WIDTH / 2, HEIGHT / 2, WIDTH / 2, HEIGHT * 4 / 10, 270, 180, 320).Named("49 20 6c 6f 76 65 20 79 6f 75"),

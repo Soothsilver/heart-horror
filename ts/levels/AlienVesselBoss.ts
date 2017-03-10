@@ -46,7 +46,7 @@ namespace AlienVessel {
             new SimpleMove(-100, -100, 50).While(circles()),
         ], 2);
     }
-    var atPlayer = new PeriodicPattern(16, (boss) => {
+    var atPlayer = new PeriodicPattern(dif(32,16,12), (boss) => {
         var BULLET_SPEED = 10;
         var dx = (player.x() - boss.x());
         var dy = (player.y() - boss.y());
@@ -56,7 +56,7 @@ namespace AlienVessel {
         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
         spawnBullet(b);
     });
-    var fireDown = new PeriodicPattern(36, (boss, self) => {
+    var fireDown = new PeriodicPattern(dif(50,36,20), (boss, self) => {
         var SPEED = 4;
         circular(40, 140, 5, (xs, ys) => {
             var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
@@ -73,7 +73,7 @@ namespace AlienVessel {
     var fireFirer = function (boss) {
         var randomx = getRandomExclusive(20, WIDTH - 20);
         var randomy = getRandomExclusive(20, HEIGHT - 20);
-        var firerPattern = new SimpleMove(randomx - boss.x(), randomy - boss.y(), 120)
+        var firerPattern = new SimpleMove(randomx - boss.x(), randomy - boss.y(), dif(120,120,70))
             .Then(new FixedDuration(30))
             .Then(new OneShot((firer) => {
                 var BULLET_SPEED = 10;
@@ -85,7 +85,7 @@ namespace AlienVessel {
                 firer.tags["xs"] = xs;
                 firer.tags["ys"] = ys;
             }))
-            .Then(new FixedDuration(60).While(new PeriodicPattern(4,
+            .Then(new FixedDuration(dif(30,60,80)).While(new PeriodicPattern(4,
                 (firer) => {
                     var xs = firer.tags["xs"];
                     var ys = firer.tags["ys"];
@@ -101,7 +101,7 @@ namespace AlienVessel {
             fireFirer(boss);          
         }
     }
-    var overload = new PeriodicPattern(10, (boss) => {
+    var overload = new PeriodicPattern(dif(20,10,6), (boss) => {
         var SPEED = 15;
         var rotation = getRandomExclusive(80, 260);
         var rotRadian = degreesToRadian(rotation);
@@ -117,11 +117,11 @@ namespace AlienVessel {
     export function alienVessel(): Pattern {
         return new RepeatPattern(() => [
             zigleft().Named("Vessel assumes attack position."),
-            new FixedDuration(60).While(atPlayer).Named("Vessel commander chooses course of action."),
+            new FixedDuration(dif(90,60,50)).While(atPlayer).Named("Vessel commander chooses course of action."),
             new RandomPattern([
                 
                 new SequencePattern([
-                    new SimpleMove(800, 0, 200).While(new PeriodicPattern(20, (boss) => {
+                    new SimpleMove(800, 0, 200).While(new PeriodicPattern(dif(40,20,12), (boss) => {
                         fireFirer(boss);
                     })).Named("Vessel ejecting auxiliary drones."),
                     new OneShot((boss) => { boss.tags["speed"] = getRandomExclusive(200, 700); }),
@@ -132,11 +132,11 @@ namespace AlienVessel {
                 
                 
                 new SequencePattern([
-                    new SimpleMove(0, 600, 60).While(atPlayer).Named("Vessel is navigating the battle space."),
+                    new SimpleMove(0, 600, dif(80,60,50)).While(atPlayer).Named("Vessel is navigating the battle space."),
                     new RepeatPattern(() => [
-                        new SimpleMove(0, -100, 30).While(fireDown).Named("Vessel is returning up."),
+                        new SimpleMove(0, -100, dif(50,30,20)).While(fireDown).Named("Vessel is returning up."),
                         new OneShot(laser),
-                        new FixedDuration(10).Named("Vessel is discharging primary weapon.")
+                        new FixedDuration(dif(20,10,6)).Named("Vessel is discharging primary weapon.")
                     ], 6),
                     new OneShot(fireFirers),
                     new SimpleMove(400, 0, 60).Named("Vessel crew is vacationing.")

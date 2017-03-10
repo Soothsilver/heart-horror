@@ -20,7 +20,9 @@ function keyboard(keyCode) {
             key.isUp = false;
         }
         if (event.keyCode != 80 && event.keyCode != 19 && event.keyCode != 27) {
-            unpause();
+            if (!menuOpen) {
+                unpause();
+            }
         }
         event.preventDefault();
     };
@@ -40,7 +42,7 @@ function keyboard(keyCode) {
     return key;
 }
 var buttons = {
-    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27, 70],
+    handledKeys: [37, 39, 40, 38, 65, 17, 113, 32, 82, 90, 16, 80, 19, 27, 70, 77],
     left: keyboard(37),
     right: keyboard(39),
     down: keyboard(40),
@@ -55,7 +57,8 @@ var buttons = {
     p: keyboard(80),
     pause: keyboard(19),
     esc: keyboard(27),
-    f: keyboard(70)
+    f: keyboard(70),
+    m: keyboard(77)
 };
 var enemies = [];
 var bullets = [];
@@ -89,7 +92,7 @@ function reloadAccessibleLevels() {
         openLevelsUpTo(-1);
     }
     else {
-        openLevelsUpTo(n);
+        openLevelsUpTo(n - 1);
     }
 }
 var DIFFICULTY_EASIEST = 1;
@@ -99,8 +102,6 @@ var DIFFICULTY_HARD = 4;
 var DIFFICULTY_FRUSTRATING = 5;
 function reloadDifficulty() {
     difficulty = parseInt(window.localStorage.getItem("difficulty"));
-    console.log("D");
-    console.log(difficulty);
     if (isNaN(difficulty)) {
         difficulty = DIFFICULTY_NORMAL;
         console.log(difficulty);
@@ -202,6 +203,7 @@ function reset() {
         pauseText2.y = HEIGHT / 2 + 35;
         pauseScreen.addChild(pauseText2);
     }
+    resumeMusic();
 }
 function spawnBosses(level, doIntro) {
     var boss = Levels.getLevel(level).bossCreation();
@@ -303,6 +305,9 @@ buttons.f2.release = function () {
 };
 buttons.r.release = function () {
     fastReset();
+};
+buttons.m.release = function () {
+    toggleMusic();
 };
 buttons.shift.press = function () {
     if (difficulty <= DIFFICULTY_EASY) {
@@ -894,6 +899,7 @@ function pause() {
     if (!paused) {
         paused = true;
         ticker.speed = 0;
+        pauseMusic();
         stage.addChild(pauseScreen);
         for (var _i = 0, animatedEntities_1 = animatedEntities; _i < animatedEntities_1.length; _i++) {
             var e = animatedEntities_1[_i];
@@ -902,9 +908,10 @@ function pause() {
     }
 }
 function unpause() {
-    if (paused && !menuOpen) {
+    if (paused) {
         paused = false;
         ticker.speed = 1;
+        resumeMusic();
         stage.removeChild(pauseScreen);
         for (var _i = 0, animatedEntities_2 = animatedEntities; _i < animatedEntities_2.length; _i++) {
             var e = animatedEntities_2[_i];
@@ -1383,6 +1390,11 @@ var FollowLeaderX = (function (_super) {
     }
     FollowLeaderX.prototype.update = function (delta, item) {
         item.sprite.x = this.leader.x();
+        if (this.leader.harmless || this.leader.gone) {
+            if (!item.harmless) {
+                item.fadeout();
+            }
+        }
     };
     FollowLeaderX.prototype.explain = function () {
         return "follow-leader";
@@ -1599,7 +1611,7 @@ var AlienVessel;
             new SimpleMove(-100, -100, 50).While(circles()),
         ]; }, 2);
     }
-    var atPlayer = new PeriodicPattern(16, function (boss) {
+    var atPlayer = new PeriodicPattern(dif(32, 16, 12), function (boss) {
         var BULLET_SPEED = 10;
         var dx = (player.x() - boss.x());
         var dy = (player.y() - boss.y());
@@ -1609,7 +1621,7 @@ var AlienVessel;
         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
         spawnBullet(b);
     });
-    var fireDown = new PeriodicPattern(36, function (boss, self) {
+    var fireDown = new PeriodicPattern(dif(50, 36, 20), function (boss, self) {
         var SPEED = 4;
         circular(40, 140, 5, function (xs, ys) {
             var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
@@ -1625,7 +1637,7 @@ var AlienVessel;
     var fireFirer = function (boss) {
         var randomx = getRandomExclusive(20, WIDTH - 20);
         var randomy = getRandomExclusive(20, HEIGHT - 20);
-        var firerPattern = new SimpleMove(randomx - boss.x(), randomy - boss.y(), 120)
+        var firerPattern = new SimpleMove(randomx - boss.x(), randomy - boss.y(), dif(120, 120, 70))
             .Then(new FixedDuration(30))
             .Then(new OneShot(function (firer) {
             var BULLET_SPEED = 10;
@@ -1637,7 +1649,7 @@ var AlienVessel;
             firer.tags["xs"] = xs;
             firer.tags["ys"] = ys;
         }))
-            .Then(new FixedDuration(60).While(new PeriodicPattern(4, function (firer) {
+            .Then(new FixedDuration(dif(30, 60, 80)).While(new PeriodicPattern(4, function (firer) {
             var xs = firer.tags["xs"];
             var ys = firer.tags["ys"];
             var b = new Bullet(false, createBulletSprite(firer.x(), firer.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
@@ -1652,7 +1664,7 @@ var AlienVessel;
             fireFirer(boss);
         }
     };
-    var overload = new PeriodicPattern(10, function (boss) {
+    var overload = new PeriodicPattern(dif(20, 10, 6), function (boss) {
         var SPEED = 15;
         var rotation = getRandomExclusive(80, 260);
         var rotRadian = degreesToRadian(rotation);
@@ -1667,10 +1679,10 @@ var AlienVessel;
     function alienVessel() {
         return new RepeatPattern(function () { return [
             zigleft().Named("Vessel assumes attack position."),
-            new FixedDuration(60).While(atPlayer).Named("Vessel commander chooses course of action."),
+            new FixedDuration(dif(90, 60, 50)).While(atPlayer).Named("Vessel commander chooses course of action."),
             new RandomPattern([
                 new SequencePattern([
-                    new SimpleMove(800, 0, 200).While(new PeriodicPattern(20, function (boss) {
+                    new SimpleMove(800, 0, 200).While(new PeriodicPattern(dif(40, 20, 12), function (boss) {
                         fireFirer(boss);
                     })).Named("Vessel ejecting auxiliary drones."),
                     new OneShot(function (boss) { boss.tags["speed"] = getRandomExclusive(200, 700); }),
@@ -1679,11 +1691,11 @@ var AlienVessel;
                     new SimpleMove(-400, 0, 60).Named("Vessel crew puts out fires.")
                 ]),
                 new SequencePattern([
-                    new SimpleMove(0, 600, 60).While(atPlayer).Named("Vessel is navigating the battle space."),
+                    new SimpleMove(0, 600, dif(80, 60, 50)).While(atPlayer).Named("Vessel is navigating the battle space."),
                     new RepeatPattern(function () { return [
-                        new SimpleMove(0, -100, 30).While(fireDown).Named("Vessel is returning up."),
+                        new SimpleMove(0, -100, dif(50, 30, 20)).While(fireDown).Named("Vessel is returning up."),
                         new OneShot(laser),
-                        new FixedDuration(10).Named("Vessel is discharging primary weapon.")
+                        new FixedDuration(dif(20, 10, 6)).Named("Vessel is discharging primary weapon.")
                     ]; }, 6),
                     new OneShot(fireFirers),
                     new SimpleMove(400, 0, 60).Named("Vessel crew is vacationing.")
@@ -1753,7 +1765,7 @@ var CommandVessel;
         spawnBullet(b);
     });
     function generateOverload() {
-        return new PeriodicPattern(1, function (boss) {
+        return new PeriodicPattern(dif(3, 1, 0.8), function (boss) {
             var SPEED = 20;
             var rotation = getRandomExclusive(0, 360);
             var rotRadian = degreesToRadian(rotation);
@@ -1772,28 +1784,28 @@ var CommandVessel;
                 var xd = player.x() - item.x();
                 var yd = player.y() - item.y();
                 var p = normalize(xd, yd);
-                var speed = 2;
+                var speed = dif(0.5, 2, 1.5);
                 item.sprite.x += p.x * speed * delta;
                 item.sprite.y += p.y * speed * delta;
             }));
             spawnBullet(b);
         }))
-            .Then(new StandingPattern().Named("Done."));
+            .Then(new StandingPattern().Named("Overloaded."));
     }
     function fireFirers() {
         return new RepeatPattern(function () { return [
             new OneShot(function (boss) { return fireFirerAtEdge(boss); }),
             new FixedDuration(10)
-        ]; }, 6).Then(new StandingPattern());
+        ]; }, dif(4, 6, 8)).Then(new StandingPattern());
     }
     function fireBoardSideCannons() {
-        return new PeriodicPattern(60, function (boss) {
+        return new PeriodicPattern(dif(100, 60, 50), function (boss) {
             fireFirer(boss, boss.x(), boss.y(), false);
         });
     }
     function singleExCircle() {
         return new OneShot(function (boss) {
-            circular(0, 180, 20, function (xs, ys, rot) {
+            circular(0, 180, dif(10, 20, 25), function (xs, ys, rot) {
                 var SPEED = 8;
                 var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
                 spawnBullet(b);
@@ -1812,24 +1824,24 @@ var CommandVessel;
     function main() {
         return new CombinationPattern([
             new RepeatPattern(function () {
-                return [new SimpleMove(WIDTH * 4 / 6, 0, 1000),
-                    new SimpleMove(0, HEIGHT * 1 / 8, 80),
-                    new SimpleMove(-WIDTH * 4 / 6, 0, 1300),
-                    new SimpleMove(0, HEIGHT * 1 / 8, 80)
+                return [new SimpleMove(WIDTH * 4 / 6, 0, dif(1300, 1000, 800)).Named("Advancing."),
+                    new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 70)).Named("New line."),
+                    new SimpleMove(-WIDTH * 4 / 6, 0, dif(1300, 1000, 800)).Named("Carriage return."),
+                    new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 70)).Named("New line.")
                 ];
             }, 3).While(new RepeatPattern(function () { return [
                 new RandomPattern([
-                    atPlayer,
-                    fireBoardSideCannons(),
-                    fireFirers(),
-                    spiralDown(),
+                    atPlayer.Named("Targeted fire."),
+                    fireBoardSideCannons().Named("Broadside cannons."),
+                    fireFirers().Named("Drones."),
+                    spiralDown().Named("Spiral attack."),
                 ]).While(new FixedDuration(200))
             ]; })).Then(new PeriodicPattern(20, function (boss) {
                 circular(0, 360, 180, function (xs, ys) {
                     var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * 10, ys * 10));
                     spawnBullet(b);
                 });
-            })),
+            }).Named("End of your story.")),
             new SpecialPattern(function (delta, boss, pattern) {
                 if (boss.getTag("overload") == 0 && boss.hp <= boss.bossbar.maxHP * 2 / 3) {
                     boss.tags["overload"] = 1;
@@ -1979,10 +1991,10 @@ var DeepEyes;
             ]);
         }
         function fireBombs(boss) {
-            for (var i = 0; i < 5; i++) {
+            for (var i = 0; i < dif(3, 5, 6); i++) {
                 var bomb = createBulletSprite(boss.x(), boss.y(), "bomb.png");
                 var SPEED = 8;
-                var rotation = Math.PI * i / 4;
+                var rotation = Math.PI * i / dif(2, 4, 5);
                 var xs = SPEED * 0.5 * Math.cos(rotation);
                 var ys = SPEED * 0.5 * Math.sin(rotation);
                 var bombPattern = new SequencePattern([
@@ -1995,7 +2007,7 @@ var DeepEyes;
                             var ys = SPEED * 0.7 * 0.5 * Math.sin(rotation);
                             var smll = createBulletSprite(bomb.x(), bomb.y(), "yellowBubble.png");
                             var bs = new Bullet(false, smll, new CircleCollider(5), new SequencePattern([
-                                new UniformMovementPattern(xs, ys).While(new FixedDuration(60)),
+                                new UniformMovementPattern(xs, ys).While(new FixedDuration(dif(30, 60, 90))),
                                 new UniformMovementPattern(xs, ys).While(new DisappearingPattern(10))
                             ]));
                             spawnBullet(bs);
@@ -2009,7 +2021,7 @@ var DeepEyes;
         var rotating = new RotationPattern(24, function (angle, delta, item) {
             item.tags["rot"] = angle;
         });
-        var atPlayer = new PeriodicPattern(16, function (boss) {
+        var atPlayer = new PeriodicPattern(dif(40, 16, 12), function (boss) {
             var BULLET_SPEED = 10;
             var dx = (player.x() - boss.x());
             var dy = (player.y() - boss.y());
@@ -2021,17 +2033,17 @@ var DeepEyes;
             spawnBullet(b);
         });
         var shooting2 = new PeriodicPattern(18, function (item) {
-            for (var i = 0; i < 10; i++) {
+            for (var i = 0; i < dif(5, 10, 12); i++) {
                 var bs = createBulletSprite(item.sprite.x, item.sprite.y, "blueOrb.png");
                 var SPEED = 5;
-                var rotation = Math.PI * i / 10;
+                var rotation = Math.PI * i / dif(5, 10, 12);
                 var xs = SPEED * 0.5 * Math.cos(rotation);
                 var ys = SPEED * 0.5 * Math.sin(rotation);
                 var b = new Bullet(false, bs, new CircleCollider(9), new UniformMovementPattern(xs, ys));
                 spawnBullet(b);
             }
         });
-        var shooting = new PeriodicPattern(1, function (item, pattern) {
+        var shooting = new PeriodicPattern(dif(3, 1, 0.8), function (item, pattern) {
             var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
             var SPEED = 5;
             var xs = SPEED * Math.cos(item.tags["rot"] + pattern.getTag("slowdown"));
@@ -2104,16 +2116,17 @@ function createEyeBoss() {
             var xs = SPEED * 0.5 * Math.cos(rotation);
             var ys = SPEED * 0.5 * Math.sin(rotation);
             var bombPattern = new SequencePattern([
-                new UniformMovementPattern(xs, ys).While(new FixedDuration(120)),
+                new UniformMovementPattern(xs, ys).While(new FixedDuration(dif(120, 120, 120))),
                 new OneShot(function (bomb) {
                     bomb.gone = true;
+                    playSfx(sfxPumPum);
                     for (var i = 0; i < 10; i++) {
                         var rotation = 2 * Math.PI * i / 10;
                         var xs = SPEED * 0.7 * 0.5 * Math.cos(rotation);
                         var ys = SPEED * 0.7 * 0.5 * Math.sin(rotation);
                         var smll = createBulletSprite(bomb.x(), bomb.y(), "yellowBubble.png");
                         var bs = new Bullet(false, smll, new CircleCollider(5), new SequencePattern([
-                            new UniformMovementPattern(xs, ys).While(new FixedDuration(60)),
+                            new UniformMovementPattern(xs, ys).While(new FixedDuration(dif(30, 60, 90))),
                             new UniformMovementPattern(xs, ys).While(new DisappearingPattern(10))
                         ]));
                         spawnBullet(bs);
@@ -2123,11 +2136,12 @@ function createEyeBoss() {
             var b = new Bullet(false, bomb, new CircleCollider(16), bombPattern);
             spawnBullet(b);
         }
+        playSfx(sfxPumPum);
     }
     var rotating = new RotationPattern(24, function (angle, delta, item) {
         item.tags["rot"] = angle;
     });
-    var atPlayer = new PeriodicPattern(16, function (boss) {
+    var atPlayer = new PeriodicPattern(dif(32, 16, 12), function (boss) {
         var BULLET_SPEED = 10;
         var dx = (player.x() - boss.x());
         var dy = (player.y() - boss.y());
@@ -2136,27 +2150,28 @@ function createEyeBoss() {
         var ys = BULLET_SPEED * dy / total;
         console.log('a');
         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b);
+        spawnBullet(b, sfxUu);
     });
     var shooting2 = new PeriodicPattern(18, function (item) {
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < dif(5, 10, 10); i++) {
             var bs = createBulletSprite(item.sprite.x, item.sprite.y, "blueOrb.png");
             var SPEED = 5;
-            var rotation = Math.PI * i / 10;
+            var rotation = Math.PI * i / dif(5, 10, 10);
             var xs = SPEED * 0.5 * Math.cos(rotation);
             var ys = SPEED * 0.5 * Math.sin(rotation);
             var b = new Bullet(false, bs, new CircleCollider(9), new UniformMovementPattern(xs, ys));
             spawnBullet(b);
         }
+        playSfx(sfxPumPum);
     });
-    var shooting = new PeriodicPattern(1, function (item, pattern) {
+    var shooting = new PeriodicPattern(dif(2, 1, 0.8), function (item, pattern) {
         var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
         var SPEED = 5;
         var xs = SPEED * Math.cos(item.tags["rot"] + pattern.getTag("slowdown"));
         var ys = SPEED * Math.sin(item.tags["rot"] + pattern.getTag("slowdown"));
         pattern.tags["slowdown"] = pattern.getTag("slowdown") + 0.02;
         var b = new Bullet(false, bs, new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b);
+        spawnBullet(b, sfxPink);
     });
     return bossMovement;
 }
@@ -2189,7 +2204,7 @@ var Portal;
             firer.tags["xs"] = xs;
             firer.tags["ys"] = ys;
         }))
-            .Then(new FixedDuration(60).While(new PeriodicPattern(4, function (firer) {
+            .Then(new FixedDuration(dif(30, 60, 70)).While(new PeriodicPattern(4, function (firer) {
             var xs = firer.tags["xs"];
             var ys = firer.tags["ys"];
             var b = new Bullet(false, createBulletSprite(firer.x(), firer.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
@@ -2204,7 +2219,7 @@ var Portal;
         frammes.push(PIXI.Texture.fromImage('img/kraken/kr' + i + '.png'));
     }
     function fireDown() {
-        return new PeriodicPattern(60, function (octopus, pat) {
+        return new PeriodicPattern(dif(180, 60, 45), function (octopus, pat) {
             circular(45, 135, 2, function (xs, ys) {
                 var SPEED = 6;
                 var b = new Bullet(false, createBulletSprite(octopus.x(), octopus.y(), "orange.png"), new CircleCollider(10), new RepeatPattern(function () { return [
@@ -2216,7 +2231,7 @@ var Portal;
         });
     }
     function summonKrakens(boss, whenUp) {
-        for (var i = 0; i < 6; i++) {
+        for (var i = 0; i < dif(4, 6, 10); i++) {
             var krakenSprite = new PIXI.extras.AnimatedSprite(frammes);
             krakenSprite.x = boss.x();
             krakenSprite.y = boss.y();
@@ -2287,7 +2302,7 @@ var Portal;
             new PIXI.Point(WIDTH / 2 + partX(radius, 0), HEIGHT / 2 + partY(radius, 0))
         ];
         return new OneShot(function (boss) {
-            var bulletSpeed = 8;
+            var bulletSpeed = dif(3, 8, 10);
             var controllerPattern = new PeriodicPattern(0.5, function (controller, self) {
                 controller.tags["angle"] = controller.getTag("angle") + Math.PI * 2 / 60;
                 var cBullet = spawnPentagramBullet(WIDTH / 2 + Math.cos(controller.tags["angle"]) * radius, HEIGHT / 2 + Math.sin(controller.tags["angle"]) * radius);
@@ -2332,15 +2347,15 @@ var Portal;
     }
     function fourFirers() {
         return new OneShot(function (boss) {
-            for (var i = 0; i < 10; i++) {
+            for (var i = 0; i < dif(5, 10, 20); i++) {
                 fireFirer(boss);
             }
         });
     }
     function singleExCircle() {
         return new OneShot(function (boss) {
-            circular(0, 360, 20, function (xs, ys, rot) {
-                var SPEED = 8;
+            circular(0, 360, dif(10, 20, 25), function (xs, ys, rot) {
+                var SPEED = dif(8, 8, 12);
                 var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
                 spawnBullet(b);
             });
@@ -2390,7 +2405,7 @@ var Portal;
         }
     }
     function maze() {
-        var MAZE_TIME = 120;
+        var MAZE_TIME = dif(180, 120, 100);
         return new OneShot(function (boss) {
             makeMazeLevel(boss, 1);
         }).Then(new FixedDuration(MAZE_TIME))
@@ -2456,23 +2471,22 @@ var TentacleBoss;
 (function (TentacleBoss) {
     function throwSplittingBalls(boss) {
         circular(45, 360 + 45, 8, function (xs, ys, rot) {
-            var orbSpeed = 4;
-            console.log(rot);
+            var orbSpeed = dif(2, 4, 4);
             var orbs = createBulletSprite(boss.x(), boss.y(), "orb.png");
             var origPattern = new UniformMovementPattern(xs * orbSpeed, ys * orbSpeed)
                 .While(new FixedDuration(60)
                 .Then(new OneShot(function (orig) {
                 orig.gone = true;
-                circular(radiansToDegrees(rot) - 30, radiansToDegrees(rot) + 30, 3, function (x2, y2, rot2) {
-                    var orbSpeed = 8;
+                circular(radiansToDegrees(rot) - 30, radiansToDegrees(rot) + 30, dif(2, 3, 3), function (x2, y2, rot2) {
+                    var orbSpeed = dif(4, 8, 8);
                     var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
                     orbs.scale.x = 0.5;
                     orbs.scale.y = 0.5;
                     var orb = new Bullet(false, orbs, new CircleCollider(10), new UniformMovementPattern(x2 * orbSpeed, y2 * orbSpeed).While(new FixedDuration(60)
                         .Then(new OneShot(function (orig) {
                         orig.gone = true;
-                        circular(radiansToDegrees(rot2) - 30, radiansToDegrees(rot2) + 30, 3, function (x3, y3, rot3) {
-                            var orbSpeed = 16;
+                        circular(radiansToDegrees(rot2) - 30, radiansToDegrees(rot2) + 30, dif(2, 3, 3), function (x3, y3, rot3) {
+                            var orbSpeed = dif(8, 16, 16);
                             var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
                             orbs.scale.x = 0.5;
                             orbs.scale.y = 0.5;
@@ -2490,8 +2504,8 @@ var TentacleBoss;
     function star() {
         return new CombinationPattern([
             new RepeatPattern(function () { return [
-                new RotationPattern(400, function (ang, del, itm) { return itm.tags["rotation"] = itm.getTag("rotation") + del; }).While(new FixedDuration(120)),
-                new RotationPattern(400, function (ang, del, itm) { return itm.tags["rotation"] = itm.getTag("rotation") - del; }).While(new FixedDuration(120))
+                new RotationPattern(dif(800, 400, 300), function (ang, del, itm) { return itm.tags["rotation"] = itm.getTag("rotation") + del; }).While(new FixedDuration(120)),
+                new RotationPattern(dif(800, 400, 300), function (ang, del, itm) { return itm.tags["rotation"] = itm.getTag("rotation") - del; }).While(new FixedDuration(120))
             ]; }),
             new PeriodicPattern(1, function (boss, pattern) {
                 for (var i = 0; i < 4; i++) {
@@ -2525,15 +2539,15 @@ var TentacleBoss;
                 new OneShot(throwSplittingBalls),
                 new SimpleMove(0, -100, 60).Named("'I only accept the best of souls!'")
             ]; }, 3),
-            new FixedDuration(90).Named("'Have you consider GigaSoulMarket, human? I hear they have a sale.'"),
+            new FixedDuration(dif(140, 90, 40)).Named("'Have you consider GigaSoulMarket, human? I hear they have a sale.'"),
             new RepeatPattern(function () { return [
                 new CustomPattern(function (boss) {
-                    return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 40);
+                    return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), dif(60, 40, 30));
                 }),
                 new FixedDuration(30)
             ]; }, 5).Named("'Sometimes they call me the Soulmand.'"),
             new CustomPattern(function (boss) {
-                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), dif(100, 60, 50));
             }).Named("'Is your soul ready to be in my belly?'"),
             star().Named("'Super Star Mega Sweep!! Muhahahaha!'"),
             new SpecialPattern(function (delta, item, pattern) {
@@ -2543,13 +2557,13 @@ var TentacleBoss;
                 var speed = 5;
                 item.sprite.x += p.x * speed * delta;
                 item.sprite.y += p.y * speed * delta;
-            }).While(new FixedDuration(120)).Named("'Why are you running?! I am not going to do \"hentai stuff\".'"),
+            }).While(new FixedDuration(dif(90, 120, 180))).Named("'Why are you running?! I am not going to do \"hentai stuff\".'"),
             new CustomPattern(function (boss) {
-                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60);
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), dif(100, 60, 50));
             }).Named("'Heh. Now you'll see a \"nuke\".'"),
             new OneShot(function (boss) {
                 circular(0, 360, 100, function (xs, ys, rot) {
-                    var speed = 14;
+                    var speed = dif(7, 14, 16);
                     var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * speed, ys * speed).While(new FixedDuration(60).Then(new DisappearingPattern(20))));
                     spawnBullet(b);
                 });
@@ -2564,12 +2578,16 @@ var TentacleBoss;
 })(TentacleBoss || (TentacleBoss = {}));
 var SPEED = 7;
 var temporaryGraphics;
-function spawnBullet(bullet) {
+function spawnBullet(bullet, sound) {
+    if (sound === void 0) { sound = null; }
     if (gameEnded) {
         bullet.harmless = true;
     }
     bullets.push(bullet);
     addBulletToStage(bullet.sprite);
+    if (sound != null) {
+        playSfx(sound);
+    }
 }
 var BULLET_SPEED = 10;
 var gameEnded;
@@ -2633,6 +2651,7 @@ var Player = (function (_super) {
                 spawnBullet(new Bullet(true, bulletSprite, new RectangleCollider(bulletSprite.width, bulletSprite.height), new UniformMovementPattern(0, -BULLET_SPEED)));
             }
             this.fireDelay = 0;
+            playSfx(sfxPlayerFire);
         }
     };
     Player.prototype.bindSpriteInScreen = function () {
@@ -2672,6 +2691,18 @@ var DIFFICULTY_EASY = 2;
 var DIFFICULTY_NORMAL = 3;
 var DIFFICULTY_HARD = 4;
 var DIFFICULTY_FRUSTRATING = 5;
+function dif(easy, normal, hard) {
+    switch (difficulty) {
+        case DIFFICULTY_EASIEST:
+        case DIFFICULTY_EASY:
+            return easy;
+        case DIFFICULTY_NORMAL:
+            return normal;
+        case DIFFICULTY_HARD:
+        case DIFFICULTY_FRUSTRATING:
+            return hard;
+    }
+}
 var skipIntro = false;
 var pauseWhenClickOut = true;
 function changeDifficulty() {
@@ -2685,6 +2716,8 @@ function loadLocalStorage() {
     reloadAccessibleLevels();
     reloadDifficulty();
     reloadSkipConfirmation();
+    musicMuted = window.localStorage.getItem("musicMuted") == "true";
+    sfxMuted = window.localStorage.getItem("sfxMuted") == "true";
 }
 function enableAllStages() {
     if (confirm("Enable all stages that you haven't reached yet?")) {
@@ -2716,23 +2749,91 @@ function applyDifficultySettings() {
             player.hp = 5;
             break;
         case DIFFICULTY_HARD:
-            player.hp = 3;
+            player.hp = 5;
             for (var _a = 0, enemies_6 = enemies; _a < enemies_6.length; _a++) {
                 var en = enemies_6[_a];
-                en.hp = 6 / 5 * en.hp;
                 en.bossbar.maxHP = en.hp;
             }
             break;
         case DIFFICULTY_FRUSTRATING:
-            player.hp = 2;
+            player.hp = 5;
             for (var _b = 0, enemies_7 = enemies; _b < enemies_7.length; _b++) {
                 var en = enemies_7[_b];
-                en.hp = 7 / 5 * en.hp;
+                en.hp = 6 / 5 * en.hp;
                 en.bossbar.maxHP = en.hp;
             }
             break;
     }
     playerBar.maxHP = player.hp;
     player.maxHp = player.hp;
+}
+var musicMuted;
+var sfxMuted;
+function loadSfx(name) {
+    return new buzz.sound("audio/sfx/" + name, {
+        volume: 40
+    });
+}
+var sfxUu = loadSfx("Uu.wav");
+var sfxPsch = loadSfx("Psch.wav");
+var sfxPumPum = loadSfx("PumPum.wav");
+var sfxPink = loadSfx("Pink.wav");
+var sfxPlayerFire = loadSfx("Uu.wav");
+sfxPlayerFire.setVolume(20);
+function playSfx(sfx) {
+    if (!sfxMuted) {
+        sfx.stop();
+        sfx.play();
+    }
+}
+var musicVolume = 40;
+var music1 = new buzz.sound("audio/music/SlimeGirlsIntro", {
+    formats: ["mp3"],
+    volume: musicVolume
+});
+var music3 = new buzz.sound("audio/music/SlimeGirls3", {
+    formats: ["mp3"],
+    volume: musicVolume
+});
+var lastMusicIndex = -1;
+function playbackEnded() {
+    while (true) {
+        var i = getRandomExclusive(0, options.length);
+        if (i == lastMusicIndex) {
+            continue;
+        }
+        lastMusicIndex = i;
+        console.log(i);
+        music.stop();
+        music = options[i];
+        resumeMusic();
+        break;
+    }
+}
+var options = [music1, music3];
+var music = music1;
+function pauseMusic() {
+    music.pause();
+}
+function resumeMusic() {
+    if (!musicMuted) {
+        music.unbind("ended");
+        music.bind("ended", playbackEnded);
+        music.play();
+    }
+}
+function toggleSfx() {
+    sfxMuted = !sfxMuted;
+    localStorage.setItem("sfxMuted", sfxMuted ? "true" : "false");
+}
+function toggleMusic() {
+    musicMuted = !musicMuted;
+    localStorage.setItem("musicMuted", musicMuted ? "true" : "false");
+    if (musicMuted) {
+        music.pause();
+    }
+    else if (!menuOpen && !paused) {
+        music.play();
+    }
 }
 //# sourceMappingURL=compiled-code.js.map

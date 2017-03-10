@@ -5,6 +5,20 @@ var DIFFICULTY_EASY = 2;
 var DIFFICULTY_NORMAL = 3;
 var DIFFICULTY_HARD = 4;
 var DIFFICULTY_FRUSTRATING = 5;
+
+function dif(easy: number, normal: number, hard: number) {
+    switch (difficulty) {
+        case DIFFICULTY_EASIEST:
+        case DIFFICULTY_EASY:
+            return easy;
+        case DIFFICULTY_NORMAL:
+            return normal;
+        case DIFFICULTY_HARD:
+        case DIFFICULTY_FRUSTRATING:
+            return hard;
+    }
+}
+
 var skipIntro: boolean = false;
 var pauseWhenClickOut: boolean = true;
 
@@ -19,6 +33,8 @@ function loadLocalStorage() {
     reloadAccessibleLevels();
     reloadDifficulty();
     reloadSkipConfirmation();
+    musicMuted = window.localStorage.getItem("musicMuted") == "true";
+    sfxMuted = window.localStorage.getItem("sfxMuted") == "true";
 }
 function enableAllStages() {
     if (confirm("Enable all stages that you haven't reached yet?")) {        
@@ -50,16 +66,15 @@ function applyDifficultySettings() {
             player.hp = 5;
             break;
         case DIFFICULTY_HARD:
-            player.hp = 3;
+            player.hp = 5;
             for (var en of enemies) {
-                en.hp = 6 / 5 * en.hp;
                 en.bossbar.maxHP = en.hp;
             }
             break;
         case DIFFICULTY_FRUSTRATING:
-            player.hp = 2;
+            player.hp = 5;
             for (var en of enemies) {
-                en.hp = 7 / 5 * en.hp;
+                en.hp = 6 / 5 * en.hp;
                 en.bossbar.maxHP = en.hp;
             }
             break;

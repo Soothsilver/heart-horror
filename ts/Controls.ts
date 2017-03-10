@@ -49,6 +49,7 @@ function pause() {
     if (!paused) {
         paused = true;
         ticker.speed = 0;
+        pauseMusic();
         stage.addChild(pauseScreen);
         for (var e of animatedEntities) {
             e.stop();
@@ -56,9 +57,10 @@ function pause() {
     }
 }
 function unpause() {
-    if (paused && !menuOpen) {
+    if (paused) {
         paused = false;
         ticker.speed = 1;
+        resumeMusic();
         stage.removeChild(pauseScreen);
         for (var e of animatedEntities) {
             e.play();

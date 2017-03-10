@@ -38,6 +38,9 @@ buttons.f2.release = function () {
 buttons.r.release = function () { 
     fastReset();
 }
+buttons.m.release = function () {
+    toggleMusic();
+}
 buttons.shift.press = function () {
     if (difficulty <= DIFFICULTY_EASY) {
         ticker.speed = 0.5;

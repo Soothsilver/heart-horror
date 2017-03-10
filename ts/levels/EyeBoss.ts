@@ -60,10 +60,10 @@ function createEyeBoss(): Pattern {
             var xs = SPEED * 0.5 * Math.cos(rotation);
             var ys = SPEED * 0.5 * Math.sin(rotation);
             var bombPattern = new SequencePattern([
-                new UniformMovementPattern(xs, ys).While(new FixedDuration(120)),
+                new UniformMovementPattern(xs, ys).While(new FixedDuration(dif(120,120,120))),
                 new OneShot((bomb) => {
                     bomb.gone = true;
-
+                    playSfx(sfxPumPum);
                     for (var i = 0; i < 10; i++) {
                         var rotation = 2 * Math.PI * i / 10;
                         var xs = SPEED * 0.7 * 0.5 * Math.cos(rotation);
@@ -71,7 +71,7 @@ function createEyeBoss(): Pattern {
                         var smll = createBulletSprite(bomb.x(), bomb.y(), "yellowBubble.png");
                         var bs = new Bullet(false, smll, new CircleCollider(5),
                             new SequencePattern([
-                                new UniformMovementPattern(xs, ys).While(new FixedDuration(60)),
+                                new UniformMovementPattern(xs, ys).While(new FixedDuration(dif(30,60,90))),
                                 new UniformMovementPattern(xs, ys).While(new DisappearingPattern(10))
                             ]));
                         spawnBullet(bs);
@@ -81,11 +81,12 @@ function createEyeBoss(): Pattern {
             var b = new Bullet(false, bomb, new CircleCollider(16), bombPattern);
             spawnBullet(b);
         }
+        playSfx(sfxPumPum);
     }
     var rotating = new RotationPattern(24, (angle, delta, item) => {
         item.tags["rot"] = angle;
     });
-    var atPlayer = new PeriodicPattern(16, (boss) => {
+    var atPlayer = new PeriodicPattern(dif(32, 16, 12), (boss) => {
         var BULLET_SPEED = 10;
         var dx = (player.x() - boss.x());
         var dy = (player.y() - boss.y());
@@ -94,20 +95,21 @@ function createEyeBoss(): Pattern {
         var ys = BULLET_SPEED * dy / total;
         console.log('a');
         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b);
+        spawnBullet(b, sfxUu);
     });
     var shooting2 = new PeriodicPattern(18, (item) => {
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < dif(5,10,10); i++) {
             var bs = createBulletSprite(item.sprite.x, item.sprite.y, "blueOrb.png");
             var SPEED = 5;
-            var rotation = Math.PI * i / 10;
+            var rotation = Math.PI * i / dif(5,10,10);
             var xs = SPEED * 0.5 * Math.cos(rotation);
             var ys = SPEED * 0.5 * Math.sin(rotation);
             var b = new Bullet(false, bs, new CircleCollider(9), new UniformMovementPattern(xs, ys));
             spawnBullet(b);
         }
+        playSfx(sfxPumPum);
     });
-    var shooting = new PeriodicPattern(1, (item, pattern) => {
+    var shooting = new PeriodicPattern(dif(2,1,0.8), (item, pattern) => {
         var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
         var SPEED = 5;
         var xs = SPEED * Math.cos(item.tags["rot"] + pattern.getTag("slowdown"));
@@ -115,7 +117,7 @@ function createEyeBoss(): Pattern {
         pattern.tags["slowdown"] = pattern.getTag("slowdown") + 0.02;
 
         var b = new Bullet(false, bs, new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b);
+        spawnBullet(b, sfxPink);
     });
     return bossMovement;
 

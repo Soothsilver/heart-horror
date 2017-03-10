@@ -208,6 +208,11 @@ class FollowLeaderX extends Pattern {
     }
     public update(delta: number, item: Item) {
         item.sprite.x = this.leader.x();
+        if (this.leader.harmless || this.leader.gone) {
+            if (!item.harmless) {
+                item.fadeout();
+            }
+        }
     }
     public explain(): string {
         return "follow-leader";

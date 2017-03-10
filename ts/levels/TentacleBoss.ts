@@ -19,16 +19,15 @@ function normalize(x: number, y: number): PIXI.Point {
 namespace TentacleBoss {
     function throwSplittingBalls(boss: Item) {
         circular(45, 360 + 45, 8, (xs, ys, rot) => {
-            var orbSpeed = 4;
-            console.log(rot);
+            var orbSpeed = dif(2,4,4);
             var orbs = createBulletSprite(boss.x(), boss.y(), "orb.png");
             var origPattern = new UniformMovementPattern(xs * orbSpeed, ys * orbSpeed)
                 .While(
                 new FixedDuration(60)
                     .Then(new OneShot((orig) => {
                         orig.gone = true;
-                        circular(radiansToDegrees(rot) - 30, radiansToDegrees(rot) + 30, 3, (x2, y2, rot2) => {
-                            var orbSpeed = 8;
+                        circular(radiansToDegrees(rot) - 30, radiansToDegrees(rot) + 30, dif(2,3,3), (x2, y2, rot2) => {
+                            var orbSpeed = dif(4,8,8);
                             var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
                             orbs.scale.x = 0.5;
                             orbs.scale.y = 0.5;
@@ -36,8 +35,8 @@ namespace TentacleBoss {
                                 new FixedDuration(60)
                                     .Then(new OneShot((orig) => {
                                         orig.gone = true;
-                                        circular(radiansToDegrees(rot2) - 30, radiansToDegrees(rot2) + 30, 3, (x3, y3, rot3) => {
-                                            var orbSpeed = 16;
+                                        circular(radiansToDegrees(rot2) - 30, radiansToDegrees(rot2) + 30, dif(2,3,3), (x3, y3, rot3) => {
+                                            var orbSpeed = dif(8,16,16);
                                             var orbs = createBulletSprite(orig.x(), orig.y(), "orb.png");
                                             orbs.scale.x = 0.5;
                                             orbs.scale.y = 0.5;
@@ -58,8 +57,8 @@ namespace TentacleBoss {
     function star(): Pattern {
         return new CombinationPattern([
             new RepeatPattern(() => [
-                new RotationPattern(400, (ang, del, itm) => itm.tags["rotation"] = itm.getTag("rotation") + del).While(new FixedDuration(120)),
-                new RotationPattern(400, (ang, del, itm) => itm.tags["rotation"] = itm.getTag("rotation") - del).While(new FixedDuration(120))
+                new RotationPattern(dif(800,400,300), (ang, del, itm) => itm.tags["rotation"] = itm.getTag("rotation") + del).While(new FixedDuration(120)),
+                new RotationPattern(dif(800, 400, 300), (ang, del, itm) => itm.tags["rotation"] = itm.getTag("rotation") - del).While(new FixedDuration(120))
             ]),
             new PeriodicPattern(1, (boss, pattern) => {
                 for (var i = 0; i < 4; i++) {
@@ -100,15 +99,15 @@ namespace TentacleBoss {
                 new OneShot(throwSplittingBalls),
                 new SimpleMove(0, -100, 60).Named("'I only accept the best of souls!'")
             ], 3),
-            new FixedDuration(90).Named("'Have you consider GigaSoulMarket, human? I hear they have a sale.'"),
+            new FixedDuration(dif(140,90,40)).Named("'Have you consider GigaSoulMarket, human? I hear they have a sale.'"),
             new RepeatPattern(() => [
                 new CustomPattern((boss) => {
-                    return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), 40)
+                    return new SimpleMove(player.x() - boss.x(), player.y() - boss.y(), dif(60,40,30))
                 }),
                 new FixedDuration(30)
             ], 5).Named("'Sometimes they call me the Soulmand.'"),
             new CustomPattern((boss) => {
-                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60)
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), dif(100,60,50))
             }).Named("'Is your soul ready to be in my belly?'"),
             star().Named("'Super Star Mega Sweep!! Muhahahaha!'"),
             new SpecialPattern((delta, item, pattern) => {
@@ -119,13 +118,13 @@ namespace TentacleBoss {
                 item.sprite.x += p.x * speed * delta;
                 item.sprite.y += p.y * speed * delta
 
-            }).While(new FixedDuration(120)).Named("'Why are you running?! I am not going to do \"hentai stuff\".'"),
+            }).While(new FixedDuration(dif(90,120,180))).Named("'Why are you running?! I am not going to do \"hentai stuff\".'"),
             new CustomPattern((boss) => {
-                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), 60)
+                return new SimpleMove(WIDTH / 2 - boss.x(), HEIGHT / 2 - boss.y(), dif(100,60,50))
             }).Named("'Heh. Now you'll see a \"nuke\".'"),
             new OneShot((boss) => {
                 circular(0, 360, 100, (xs, ys, rot) => {
-                    var speed = 14;
+                    var speed = dif(7,14,16);
                     var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * speed, ys * speed).While(
                         new FixedDuration(60).Then(new DisappearingPattern(20))
 

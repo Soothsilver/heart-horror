@@ -1,11 +1,14 @@
 ﻿var SPEED = 7;
 var temporaryGraphics: PIXI.Graphics;
-function spawnBullet(bullet: Bullet) {
+function spawnBullet(bullet: Bullet, sound : Sound = null) {
     if (gameEnded) {
         bullet.harmless = true;
     }
     bullets.push(bullet);
     addBulletToStage(bullet.sprite);
+    if (sound != null) {
+        playSfx(sound);
+    }
 }
 var BULLET_SPEED = 10;
 var gameEnded: boolean;
@@ -41,6 +44,7 @@ class Player extends Item {
                 spawnBullet(new Bullet(true, bulletSprite, new RectangleCollider(bulletSprite.width, bulletSprite.height), new UniformMovementPattern(0, -BULLET_SPEED)));
             }
             this.fireDelay = 0;
+            playSfx(sfxPlayerFire);
         }
     }
     public bindSpriteInScreen() {

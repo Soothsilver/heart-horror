@@ -19,6 +19,7 @@
     <script src="lib/bootstrap-confirmation.min.js"></script>
 
     <script src="lib/pixi.js"></script>
+    <script src="lib/buzz.min.js"></script>
     <script src="generated/compiled-code.js"></script>
     <style>
         .left {
@@ -52,14 +53,22 @@
 </head>
 <body>
     <div align="center">
-        <div id="viewport" style="padding-top: 10px; padding-bottom: 5px;" onclick="unpause();">
+        <div id="viewport" style="padding-top: 10px; padding-bottom: 5px;" onclick="if (!menuOpen) { unpause(); }">
         </div>
         <div align="center">
             <span>Use <b>Z</b>, <b>Ctrl</b> or <b>A</b> keys to fire. Use <b>all arrow keys</b> to move.</span>
+            <br>
+            <br>
+        </div>
+        <div align="center">
+        </div>
+        <div align="center">
             <button onclick="toggleAutoFire();" class="btn btn-primary">Toggle auto-fire [Space]</button>
             <button onclick="togglePause();" class="btn btn-default">Pause [P/click outside]</button>
             <button onclick="fastReset();" class="btn btn-danger">Reset [R]</button>
             <button onclick="giveUp();" class="btn btn-default">Open menu [Esc]</button>
+            <button onclick="toggleSfx();" class="btn btn-default">Toggle sound effects</button>
+            <button onclick="toggleMusic();" class="btn btn-default">Toggle music [M]</button>
         </div>
         <div id="mainmenu" class="mainmenu-panel panel panel-primary" style="display: none;">
             <div class="panel-heading">Heart Horror</div>
@@ -129,11 +138,11 @@
                     <br>
                     Difficulty: 
                     <select id="difficulty" onchange="changeDifficulty()">
-                        <option value="1">Very easy (much more HP, enemy less HP, hold SHIFT to slow down time)</option>
-                        <option value="2">Easy (more HP, hold SHIFT to slow down time)</option>
+                        <option value="1">Easiest (much more HP, enemy less HP, enemy patterns less dense, hold SHIFT to slow down time)</option>
+                        <option value="2">Easy (more HP, enemy patterns less dense, hold SHIFT to slow down time)</option>
                         <option value="3" selected>Normal</option>
-                        <option value="4">Hard (less HP, enemy more HP)</option>
-                        <option value="5">Frustrating (much less HP, enemy much more HP)</option>
+                        <option value="4">Hard (enemy patterns more dense)</option>
+                        <option value="5">Frustrating (enemy more HP, enemy patterns more dense)</option>
                     </select>
                     <br>
                     <small>Changing the difficulty will reset the level.</small>
