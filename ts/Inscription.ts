@@ -44,7 +44,6 @@ function showDefeatedScreen() {
             new FixedDuration(50),
             new SpecialPattern((delta, item, pattern) => {
                 item.sprite.alpha += delta / 40;
-                console.log(item.sprite.alpha);
                 if (item.sprite.alpha > 1) {
                     item.sprite.alpha = 1;
                 }
@@ -149,7 +148,6 @@ function showCongratulationsScreen()
             new FixedDuration(isPerfect ? 150 : 50),
             new SpecialPattern((delta, item, pattern) => {               
                 item.sprite.alpha += delta / 40;
-                console.log(item.sprite.alpha);
                 if (item.sprite.alpha > 1) {
                     item.sprite.alpha = 1;
                 }

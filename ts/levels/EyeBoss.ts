@@ -91,7 +91,6 @@ function createEyeBoss(): Pattern {
         var total = Math.sqrt(dx * dx + dy * dy);
         var xs = BULLET_SPEED * dx / total;
         var ys = BULLET_SPEED * dy / total;
-        console.log('a');
         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
         spawnBullet(b);
     });

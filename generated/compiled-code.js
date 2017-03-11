@@ -104,7 +104,6 @@ function reloadDifficulty() {
     difficulty = parseInt(window.localStorage.getItem("difficulty"));
     if (isNaN(difficulty)) {
         difficulty = DIFFICULTY_NORMAL;
-        console.log(difficulty);
     }
     $("#difficulty").val(difficulty);
 }
@@ -213,6 +212,20 @@ function spawnBosses(level, doIntro) {
     if (double) {
         boss2 = Levels.getLevel(level).bossCreation2();
         numberOfBossesRemaining = 2;
+    }
+    if (level == 1) {
+        var introtest = PIXI.Sprite.fromImage("img/introtest.png");
+        introtest.x = 0;
+        introtest.y = HEIGHT - 300;
+        introtest.alpha = 0;
+        stage.addChild(introtest);
+        var introBullet = new Inscription(introtest, new SequencePattern([
+            new AppearingPattern(INTRO_TIME / 8),
+            new FixedDuration(INTRO_TIME * 3 / 4),
+            new DisappearingPattern(INTRO_TIME / 8)
+        ]));
+        introBullet.harmless = true;
+        hud.push(introBullet);
     }
     if (doIntro) {
         var originalY = boss.sprite.y;
@@ -1019,7 +1032,6 @@ function showDefeatedScreen() {
         new FixedDuration(50),
         new SpecialPattern(function (delta, item, pattern) {
             item.sprite.alpha += delta / 40;
-            console.log(item.sprite.alpha);
             if (item.sprite.alpha > 1) {
                 item.sprite.alpha = 1;
             }
@@ -1112,7 +1124,6 @@ function showCongratulationsScreen() {
         new FixedDuration(isPerfect ? 150 : 50),
         new SpecialPattern(function (delta, item, pattern) {
             item.sprite.alpha += delta / 40;
-            console.log(item.sprite.alpha);
             if (item.sprite.alpha > 1) {
                 item.sprite.alpha = 1;
             }
@@ -2149,7 +2160,6 @@ function createEyeBoss() {
         var total = Math.sqrt(dx * dx + dy * dy);
         var xs = BULLET_SPEED * dx / total;
         var ys = BULLET_SPEED * dy / total;
-        console.log('a');
         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
         spawnBullet(b);
     });
@@ -2594,11 +2604,13 @@ function playSfx(sfx) {
 var musicVolume = 40;
 var music1 = new buzz.sound("audio/music/SlimeGirlsIntro", {
     formats: ["mp3"],
-    volume: musicVolume
+    volume: musicVolume,
+    preload: true
 });
 var music3 = new buzz.sound("audio/music/SlimeGirls3", {
     formats: ["mp3"],
-    volume: musicVolume
+    volume: musicVolume,
+    preload: true
 });
 var lastMusicIndex = -1;
 function playbackEnded() {

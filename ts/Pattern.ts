@@ -131,7 +131,6 @@ class PeriodicPattern extends Pattern {
         this.timeUntilPeriod -= delta;
         while (this.timeUntilPeriod < 0) {
             this.timeUntilPeriod += this.periodTime;
-       //     console.log(this);
             this.func(item, this);
         }
     }

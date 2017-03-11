@@ -38,7 +38,8 @@ var musicTest3 = new buzz.sound("audio/music/SlimeTest", {
 });*/
 var music1 = new buzz.sound("audio/music/SlimeGirlsIntro", {
     formats: ["mp3"],
-    volume: musicVolume
+    volume: musicVolume,
+    preload: true
 });
 /*
 var music2 = new buzz.sound("audio/music/SlimeGirls2", {
@@ -47,7 +48,8 @@ var music2 = new buzz.sound("audio/music/SlimeGirls2", {
 });*/
 var music3 = new buzz.sound("audio/music/SlimeGirls3", {
     formats: ["mp3"],
-    volume: musicVolume
+    volume: musicVolume,
+    preload: true
 });
 var lastMusicIndex = -1;
 function playbackEnded() {

@@ -48,7 +48,6 @@ function reloadDifficulty() {
     difficulty = parseInt(window.localStorage.getItem("difficulty"));
     if (isNaN(difficulty)) {
         difficulty = DIFFICULTY_NORMAL;
-        console.log(difficulty);
     }
     $("#difficulty").val(difficulty);
 }
@@ -163,6 +162,21 @@ function spawnBosses(level : number, doIntro : boolean) {
     if (double) {
         boss2 = Levels.getLevel(level).bossCreation2();
         numberOfBossesRemaining = 2;
+    }
+    if (level == 1) {
+        var introtest = PIXI.Sprite.fromImage("img/introtest.png");
+        introtest.x = 0;
+        introtest.y = HEIGHT - 300;
+        introtest.alpha = 0;
+        stage.addChild(introtest);
+        var introBullet = new Inscription(introtest,
+            new SequencePattern([
+                new AppearingPattern(INTRO_TIME / 8),
+                new FixedDuration(INTRO_TIME * 3 / 4),
+                new DisappearingPattern(INTRO_TIME / 8)
+            ]));
+        introBullet.harmless = true;
+        hud.push(introBullet);
     }
     if (doIntro) {
         var originalY = boss.sprite.y;
