@@ -115,8 +115,9 @@ function reset() {
         dateOfStart = new Date();
         // FPS    
         basicText = new PIXI.Text("FPS: ?");
-        basicText.x = 10;
-        basicText.y = 10;
+        basicText.x = 2;
+        basicText.y = 2;
+        basicText.style.fontSize = 12;
         stage.addChild(basicText);
 
         // Apply difficulty settings

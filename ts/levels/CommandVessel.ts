@@ -61,7 +61,7 @@ namespace CommandVessel {
         spawnBullet(b);
     });
     function generateOverload(): Pattern {
-        return new PeriodicPattern(dif(3,1,0.8), (boss) => {
+        return new PeriodicPattern(dif(3,1,0.9), (boss) => {
             var SPEED = 20;
             var rotation = getRandomExclusive(0, 360);
             var rotRadian = degreesToRadian(rotation);
@@ -80,7 +80,7 @@ namespace CommandVessel {
                     var xd = player.x() - item.x();
                     var yd = player.y() - item.y();
                     var p: PIXI.Point = normalize(xd, yd);
-                    var speed = dif(0.5,2,1.5);
+                    var speed = dif(0.5,2,2);
                     item.sprite.x += p.x * speed * delta;
                     item.sprite.y += p.y * speed * delta
                 }));
@@ -92,16 +92,16 @@ namespace CommandVessel {
         return new RepeatPattern(() => [
             new OneShot((boss) => fireFirerAtEdge(boss)),
             new FixedDuration(10)
-        ], dif(4,6,8)).Then(new StandingPattern());
+        ], dif(4,6,7)).Then(new StandingPattern());
     }
     function fireBoardSideCannons() {
-        return new PeriodicPattern(dif(100,60,50), (boss) => {
+        return new PeriodicPattern(dif(100,60,55), (boss) => {
             fireFirer(boss, boss.x(), boss.y(), false);
         });
     }
     function singleExCircle(): Pattern {
         return new OneShot((boss) => {
-            circular(0, 180, dif(10,20,25), (xs, ys, rot) => {
+            circular(0, 180, dif(10,20,22), (xs, ys, rot) => {
                 var SPEED = 8;
                 var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
                 spawnBullet(b);
@@ -121,10 +121,10 @@ namespace CommandVessel {
         return new
             CombinationPattern([
                 new RepeatPattern(() =>
-                    [new SimpleMove(WIDTH * 4 / 6, 0, dif(1300,1000, 800)).Named("Advancing."),
-                        new SimpleMove(0, HEIGHT * 1 / 8, dif(120,80,70)).Named("New line."),
-                        new SimpleMove(-WIDTH * 4 / 6, 0, dif(1300, 1000, 800)).Named("Carriage return."),
-                        new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 70)).Named("New line.")
+                    [new SimpleMove(WIDTH * 4 / 6, 0, dif(1300,1000, 1000)).Named("Advancing."),
+                        new SimpleMove(0, HEIGHT * 1 / 8, dif(120,80,80)).Named("New line."),
+                        new SimpleMove(-WIDTH * 4 / 6, 0, dif(1300, 1000, 1000)).Named("Carriage return."),
+                        new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 80)).Named("New line.")
                     ], 3).While(
                     new RepeatPattern(() => [
                         new RandomPattern([
@@ -132,7 +132,7 @@ namespace CommandVessel {
                             fireBoardSideCannons().Named("Broadside cannons."),
                             fireFirers().Named("Drones."),
                             spiralDown().Named("Spiral attack."),
-                        ]).While(new FixedDuration(200))
+                        ]).While(new FixedDuration(200).Named(""))
                     ])
                     ).Then(new PeriodicPattern(20, (boss) => {
                         circular(0, 360, 180, (xs, ys) => {
@@ -156,8 +156,7 @@ namespace CommandVessel {
                         clearFriendlyBullets();
                         boss.pattern = new Both([boss.pattern, generateOverload()]);
                     }
-
-                }),
+                }).Named(""),
                 new PeriodicPattern(1, (boss) => {
                     if (player.y() < boss.y()) {
                         var BULLET_SPEED = 12;
@@ -169,8 +168,7 @@ namespace CommandVessel {
                         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs, ys));
                         spawnBullet(b);
                     }
-
-                })
+                }).Named("(anti-up defense active)")
             ]);
 
     }

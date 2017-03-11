@@ -1,5 +1,5 @@
 ﻿var musicMuted: boolean;
-var sfxMuted: boolean;
+var sfxMuted: boolean = true;
 
 function loadSfx(name: string): Sound {
     return new buzz.sound("audio/sfx/" + name, {
@@ -7,12 +7,8 @@ function loadSfx(name: string): Sound {
     });
 }
 
-var sfxUu = loadSfx("Uu.wav");
-var sfxPsch = loadSfx("Psch.wav");
-var sfxPumPum = loadSfx("PumPum.wav");
-var sfxPink = loadSfx("Pink.wav");
 var sfxPlayerFire = loadSfx("Uu.wav");
-sfxPlayerFire.setVolume(20);
+sfxPlayerFire.setVolume(15);
 
 function playSfx(sfx: Sound) {
     if (!sfxMuted) {

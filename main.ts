@@ -64,6 +64,8 @@ var difficulty: number = 3;
 ticker.add(function (delta) {
     if (basicText != null) {
         basicText.text = "Difficulty: " + difficultyToString(difficulty) +
+            "\nFPS: " + ticker.FPS +
+            "\nBoss: " + Levels.getLevel(loadedLevel).bossname + 
             "\n" + (enemies.length > 0 ?  ( "Boss: " +  enemies[0].pattern.explain() ) : "");
     }
     if (player != null) {

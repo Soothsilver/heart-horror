@@ -34,7 +34,7 @@ function loadLocalStorage() {
     reloadDifficulty();
     reloadSkipConfirmation();
     musicMuted = window.localStorage.getItem("musicMuted") == "true";
-    sfxMuted = window.localStorage.getItem("sfxMuted") == "true";
+    sfxMuted = window.localStorage.getItem("sfxMuted") === "false" ? false : true;
 }
 function enableAllStages() {
     if (confirm("Enable all stages that you haven't reached yet?")) {        

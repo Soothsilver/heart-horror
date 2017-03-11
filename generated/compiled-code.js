@@ -171,8 +171,9 @@ function reset() {
         playerBar = new PlayerBar();
         dateOfStart = new Date();
         basicText = new PIXI.Text("FPS: ?");
-        basicText.x = 10;
-        basicText.y = 10;
+        basicText.x = 2;
+        basicText.y = 2;
+        basicText.style.fontSize = 12;
         stage.addChild(basicText);
         applyDifficultySettings();
         separatorGraphics = new PIXI.Graphics();
@@ -330,6 +331,8 @@ var difficulty = 3;
 ticker.add(function (delta) {
     if (basicText != null) {
         basicText.text = "Difficulty: " + difficultyToString(difficulty) +
+            "\nFPS: " + ticker.FPS +
+            "\nBoss: " + Levels.getLevel(loadedLevel).bossname +
             "\n" + (enemies.length > 0 ? ("Boss: " + enemies[0].pattern.explain()) : "");
     }
     if (player != null) {
@@ -1765,7 +1768,7 @@ var CommandVessel;
         spawnBullet(b);
     });
     function generateOverload() {
-        return new PeriodicPattern(dif(3, 1, 0.8), function (boss) {
+        return new PeriodicPattern(dif(3, 1, 0.9), function (boss) {
             var SPEED = 20;
             var rotation = getRandomExclusive(0, 360);
             var rotRadian = degreesToRadian(rotation);
@@ -1784,7 +1787,7 @@ var CommandVessel;
                 var xd = player.x() - item.x();
                 var yd = player.y() - item.y();
                 var p = normalize(xd, yd);
-                var speed = dif(0.5, 2, 1.5);
+                var speed = dif(0.5, 2, 2);
                 item.sprite.x += p.x * speed * delta;
                 item.sprite.y += p.y * speed * delta;
             }));
@@ -1796,16 +1799,16 @@ var CommandVessel;
         return new RepeatPattern(function () { return [
             new OneShot(function (boss) { return fireFirerAtEdge(boss); }),
             new FixedDuration(10)
-        ]; }, dif(4, 6, 8)).Then(new StandingPattern());
+        ]; }, dif(4, 6, 7)).Then(new StandingPattern());
     }
     function fireBoardSideCannons() {
-        return new PeriodicPattern(dif(100, 60, 50), function (boss) {
+        return new PeriodicPattern(dif(100, 60, 55), function (boss) {
             fireFirer(boss, boss.x(), boss.y(), false);
         });
     }
     function singleExCircle() {
         return new OneShot(function (boss) {
-            circular(0, 180, dif(10, 20, 25), function (xs, ys, rot) {
+            circular(0, 180, dif(10, 20, 22), function (xs, ys, rot) {
                 var SPEED = 8;
                 var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * SPEED, ys * SPEED));
                 spawnBullet(b);
@@ -1824,10 +1827,10 @@ var CommandVessel;
     function main() {
         return new CombinationPattern([
             new RepeatPattern(function () {
-                return [new SimpleMove(WIDTH * 4 / 6, 0, dif(1300, 1000, 800)).Named("Advancing."),
-                    new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 70)).Named("New line."),
-                    new SimpleMove(-WIDTH * 4 / 6, 0, dif(1300, 1000, 800)).Named("Carriage return."),
-                    new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 70)).Named("New line.")
+                return [new SimpleMove(WIDTH * 4 / 6, 0, dif(1300, 1000, 1000)).Named("Advancing."),
+                    new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 80)).Named("New line."),
+                    new SimpleMove(-WIDTH * 4 / 6, 0, dif(1300, 1000, 1000)).Named("Carriage return."),
+                    new SimpleMove(0, HEIGHT * 1 / 8, dif(120, 80, 80)).Named("New line.")
                 ];
             }, 3).While(new RepeatPattern(function () { return [
                 new RandomPattern([
@@ -1835,7 +1838,7 @@ var CommandVessel;
                     fireBoardSideCannons().Named("Broadside cannons."),
                     fireFirers().Named("Drones."),
                     spiralDown().Named("Spiral attack."),
-                ]).While(new FixedDuration(200))
+                ]).While(new FixedDuration(200).Named(""))
             ]; })).Then(new PeriodicPattern(20, function (boss) {
                 circular(0, 360, 180, function (xs, ys) {
                     var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs * 10, ys * 10));
@@ -1855,7 +1858,7 @@ var CommandVessel;
                     clearFriendlyBullets();
                     boss.pattern = new Both([boss.pattern, generateOverload()]);
                 }
-            }),
+            }).Named(""),
             new PeriodicPattern(1, function (boss) {
                 if (player.y() < boss.y()) {
                     var BULLET_SPEED = 12;
@@ -1867,7 +1870,7 @@ var CommandVessel;
                     var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "blueOrb.png"), new CircleCollider(9), new UniformMovementPattern(xs, ys));
                     spawnBullet(b);
                 }
-            })
+            }).Named("(anti-up defense active)")
         ]);
     }
     CommandVessel.main = main;
@@ -2119,7 +2122,6 @@ function createEyeBoss() {
                 new UniformMovementPattern(xs, ys).While(new FixedDuration(dif(120, 120, 120))),
                 new OneShot(function (bomb) {
                     bomb.gone = true;
-                    playSfx(sfxPumPum);
                     for (var i = 0; i < 10; i++) {
                         var rotation = 2 * Math.PI * i / 10;
                         var xs = SPEED * 0.7 * 0.5 * Math.cos(rotation);
@@ -2136,7 +2138,6 @@ function createEyeBoss() {
             var b = new Bullet(false, bomb, new CircleCollider(16), bombPattern);
             spawnBullet(b);
         }
-        playSfx(sfxPumPum);
     }
     var rotating = new RotationPattern(24, function (angle, delta, item) {
         item.tags["rot"] = angle;
@@ -2150,7 +2151,7 @@ function createEyeBoss() {
         var ys = BULLET_SPEED * dy / total;
         console.log('a');
         var b = new Bullet(false, createBulletSprite(boss.x(), boss.y(), "yellowBubble.png"), new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b, sfxUu);
+        spawnBullet(b);
     });
     var shooting2 = new PeriodicPattern(18, function (item) {
         for (var i = 0; i < dif(5, 10, 10); i++) {
@@ -2162,7 +2163,6 @@ function createEyeBoss() {
             var b = new Bullet(false, bs, new CircleCollider(9), new UniformMovementPattern(xs, ys));
             spawnBullet(b);
         }
-        playSfx(sfxPumPum);
     });
     var shooting = new PeriodicPattern(dif(2, 1, 0.8), function (item, pattern) {
         var bs = createBulletSprite(item.sprite.x, item.sprite.y, "greenBubble.png");
@@ -2171,7 +2171,7 @@ function createEyeBoss() {
         var ys = SPEED * Math.sin(item.tags["rot"] + pattern.getTag("slowdown"));
         pattern.tags["slowdown"] = pattern.getTag("slowdown") + 0.02;
         var b = new Bullet(false, bs, new CircleCollider(5), new UniformMovementPattern(xs, ys));
-        spawnBullet(b, sfxPink);
+        spawnBullet(b);
     });
     return bossMovement;
 }
@@ -2576,6 +2576,71 @@ var TentacleBoss;
     }
     TentacleBoss.main = main;
 })(TentacleBoss || (TentacleBoss = {}));
+var musicMuted;
+var sfxMuted = true;
+function loadSfx(name) {
+    return new buzz.sound("audio/sfx/" + name, {
+        volume: 40
+    });
+}
+var sfxPlayerFire = loadSfx("Uu.wav");
+sfxPlayerFire.setVolume(15);
+function playSfx(sfx) {
+    if (!sfxMuted) {
+        sfx.stop();
+        sfx.play();
+    }
+}
+var musicVolume = 40;
+var music1 = new buzz.sound("audio/music/SlimeGirlsIntro", {
+    formats: ["mp3"],
+    volume: musicVolume
+});
+var music3 = new buzz.sound("audio/music/SlimeGirls3", {
+    formats: ["mp3"],
+    volume: musicVolume
+});
+var lastMusicIndex = -1;
+function playbackEnded() {
+    while (true) {
+        var i = getRandomExclusive(0, options.length);
+        if (i == lastMusicIndex) {
+            continue;
+        }
+        lastMusicIndex = i;
+        console.log(i);
+        music.stop();
+        music = options[i];
+        resumeMusic();
+        break;
+    }
+}
+var options = [music1, music3];
+var music = music1;
+function pauseMusic() {
+    music.pause();
+}
+function resumeMusic() {
+    if (!musicMuted) {
+        music.unbind("ended");
+        music.bind("ended", playbackEnded);
+        music.play();
+    }
+}
+function toggleSfx() {
+    sfxMuted = !sfxMuted;
+    localStorage.setItem("sfxMuted", sfxMuted ? "true" : "false");
+}
+function toggleMusic() {
+    musicMuted = !musicMuted;
+    localStorage.setItem("musicMuted", musicMuted ? "true" : "false");
+    if (musicMuted) {
+        music.pause();
+    }
+    else if (!menuOpen && !paused) {
+        music.play();
+    }
+}
 var SPEED = 7;
 var temporaryGraphics;
 function spawnBullet(bullet, sound) {
@@ -2717,7 +2782,7 @@ function loadLocalStorage() {
     reloadDifficulty();
     reloadSkipConfirmation();
     musicMuted = window.localStorage.getItem("musicMuted") == "true";
-    sfxMuted = window.localStorage.getItem("sfxMuted") == "true";
+    sfxMuted = window.localStorage.getItem("sfxMuted") === "false" ? false : true;
 }
 function enableAllStages() {
     if (confirm("Enable all stages that you haven't reached yet?")) {
@@ -2766,74 +2831,5 @@ function applyDifficultySettings() {
     }
     playerBar.maxHP = player.hp;
     player.maxHp = player.hp;
-}
-var musicMuted;
-var sfxMuted;
-function loadSfx(name) {
-    return new buzz.sound("audio/sfx/" + name, {
-        volume: 40
-    });
-}
-var sfxUu = loadSfx("Uu.wav");
-var sfxPsch = loadSfx("Psch.wav");
-var sfxPumPum = loadSfx("PumPum.wav");
-var sfxPink = loadSfx("Pink.wav");
-var sfxPlayerFire = loadSfx("Uu.wav");
-sfxPlayerFire.setVolume(20);
-function playSfx(sfx) {
-    if (!sfxMuted) {
-        sfx.stop();
-        sfx.play();
-    }
-}
-var musicVolume = 40;
-var music1 = new buzz.sound("audio/music/SlimeGirlsIntro", {
-    formats: ["mp3"],
-    volume: musicVolume
-});
-var music3 = new buzz.sound("audio/music/SlimeGirls3", {
-    formats: ["mp3"],
-    volume: musicVolume
-});
-var lastMusicIndex = -1;
-function playbackEnded() {
-    while (true) {
-        var i = getRandomExclusive(0, options.length);
-        if (i == lastMusicIndex) {
-            continue;
-        }
-        lastMusicIndex = i;
-        console.log(i);
-        music.stop();
-        music = options[i];
-        resumeMusic();
-        break;
-    }
-}
-var options = [music1, music3];
-var music = music1;
-function pauseMusic() {
-    music.pause();
-}
-function resumeMusic() {
-    if (!musicMuted) {
-        music.unbind("ended");
-        music.bind("ended", playbackEnded);
-        music.play();
-    }
-}
-function toggleSfx() {
-    sfxMuted = !sfxMuted;
-    localStorage.setItem("sfxMuted", sfxMuted ? "true" : "false");
-}
-function toggleMusic() {
-    musicMuted = !musicMuted;
-    localStorage.setItem("musicMuted", musicMuted ? "true" : "false");
-    if (musicMuted) {
-        music.pause();
-    }
-    else if (!menuOpen && !paused) {
-        music.play();
-    }
 }
 //# sourceMappingURL=compiled-code.js.map
